@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"hw1/internal/app"
 )
 
 func ReadConsole() {
@@ -28,6 +29,14 @@ func ReadConsole() {
 		case "clear":
 			fmt.Print("\033[2J")
 			PrintInterface()
+		case "add":
+			app.AddTask()
+		case "status":
+			app.UpdateTaskStatus()
+		case "edit":
+			app.EditTask()
+		case "delete":
+			app.DeleteTask()
 		default:
 			fmt.Println("Неизвестная команда!")
 		}
