@@ -41,6 +41,7 @@ func (s *TaskStorageMap) EditTask(newTask model.Task) error {
 	if !newTask.Deadline.IsZero() {
 		task.Deadline = newTask.Deadline
 	}
+
 	s.TaskMap[newTask.ID] = task
 	return nil 
 }
@@ -48,4 +49,14 @@ func (s *TaskStorageMap) EditTask(newTask model.Task) error {
 func (s *TaskStorageMap) Delete(id model.TaskID) error {
 	delete(s.TaskMap, id)
 	return nil 
+}
+
+func MakeNewStorageMap() TaskStorageMap {
+	newTaskMap := map[model.TaskID]model.Task{}
+
+	storage := TaskStorageMap{ 
+		TaskMap: newTaskMap,
+		NextID: 0,
+	} 
+	return storage
 }

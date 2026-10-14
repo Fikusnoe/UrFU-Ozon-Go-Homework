@@ -8,7 +8,7 @@ import (
 	"hw1/internal/app"
 )
 
-func ReadConsole() {
+func ReadConsole(taskHandler app.TaskHandler) {
 	scanner := bufio.NewScanner(os.Stdin)
 
 	for scanner.Scan() {
@@ -30,13 +30,13 @@ func ReadConsole() {
 			fmt.Print("\033[2J")
 			PrintInterface()
 		case "add":
-			app.AddTask()
+			taskHandler.AddTask()
 		case "status":
-			app.UpdateTaskStatus()
+			taskHandler.UpdateTaskStatus()
 		case "edit":
-			app.EditTask()
+			taskHandler.EditTask()
 		case "delete":
-			app.DeleteTask()
+			taskHandler.DeleteTask()
 		default:
 			fmt.Println("Неизвестная команда!")
 		}
@@ -48,6 +48,11 @@ func ReadConsole() {
 	}
 }
 
+func Run(taskHandler app.TaskHandler) {
+	PrintInterface()
+	ReadConsole(taskHandler)
+}
+
 func PrintInterface() {
 	fmt.Println("TaskTracker ver 0.1")
 	fmt.Println("Привет!")
@@ -55,7 +60,6 @@ func PrintInterface() {
 	fmt.Println("help - полный список команд и их описание")
 	fmt.Println("exit - выход из приложения")
 	fmt.Print("Введите команду: ")
-	ReadConsole()
 }
 
 func PrintHelp() {

@@ -1,22 +1,30 @@
 package app
 
 import (
-	"hw1/internal/model"
 	"hw1/internal/storage"
 )
 
-func AddTask() {
+type TaskHandler struct {
+	storage TaskStorage
+}
+
+func (ts *TaskHandler) AddTask() {
 
 }
 
-func UpdateTaskStatus() {
+func (ts *TaskHandler) UpdateTaskStatus() {
 
 }
 
-func EditTask() {
+func (ts *TaskHandler) EditTask() {
 
 }
 
-func DeleteTask() {
+func (ts *TaskHandler) DeleteTask() {
 
+}
+
+func MakeNewTaskHandler(storage storage.TaskStorageMap) TaskHandler {
+	handler := TaskHandler{storage: &storage}
+	return handler
 }
