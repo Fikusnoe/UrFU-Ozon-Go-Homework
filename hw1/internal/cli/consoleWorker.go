@@ -11,6 +11,9 @@ func ReadConsole() {
 	scanner := bufio.NewScanner(os.Stdin)
 
 	for scanner.Scan() {
+		fmt.Print("Введите команду: ")
+		fmt.Println()
+
 		rawQueryStr := scanner.Text()
 		querySlice := strings.Fields(rawQueryStr)
 
@@ -22,12 +25,12 @@ func ReadConsole() {
 			return
 		case "statuses":
 			PrintStatuses()
+		case "clear":
+			fmt.Print("\033[2J")
+			PrintInterface()
 		default:
 			fmt.Println("Неизвестная команда!")
 		}
-
-		fmt.Println()
-		fmt.Print("Введите команду: ")
 	}
 
 	err := scanner.Err()
@@ -56,6 +59,7 @@ func PrintHelp() {
 	fmt.Println("statuses - вывести список всех статусов задачи")
 	fmt.Println("edit <идентификатор_задачи> <заголовок> <дедлайн> - отредактировать задачу. Можно ввести заголовок и/или дедлайн")
 	fmt.Println("delete <идентификатор_задачи> - удалить задачу.")
+	fmt.Println("clear - очищает экран, отрисовывает стартовый интерфейс")
 	fmt.Println()
 	fmt.Println("!!!ВАЖНО!!!")
 	fmt.Println("<> писать не нужно")
