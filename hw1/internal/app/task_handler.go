@@ -10,6 +10,7 @@ type TaskHandler struct {
 
 func (ts *TaskHandler) AddTask() {
 
+	ts.storage.Save()
 }
 
 func (ts *TaskHandler) UpdateTaskStatus() {
@@ -28,3 +29,4 @@ func MakeNewTaskHandler(storage storage.TaskStorageMap) TaskHandler {
 	handler := TaskHandler{storage: &storage}
 	return handler
 }
+

@@ -20,3 +20,14 @@ type Task struct {
 	Status TaskStatus
 	Deadline time.Time
 }
+
+func MakeNewTask(id TaskID, name string, status TaskStatus, deadline time.Time) Task {
+	newTask := Task{
+		ID: id,
+		Name: name,
+		Status: status,
+		Deadline: deadline,
+	}
+
+	return newTask
+}
