@@ -36,18 +36,34 @@ func ReadConsole(taskHandler app.TaskHandler) {
 		case "add":
 			if querySliceLen < 3 {
 				fmt.Println("Неверный формат команды")
+				break
 			}
 
 			name := strings.Join(querySlice[1:querySliceLen-2], " ")
-			deadline, _ := time.Parse("2006-01-02", querySlice[querySliceLen-1])
-			if deadline.After(time.Now()) {
-				fmt.Println("Неверный формат даты: дедлайн не может быть позже текущей даты")
+			deadline, err := time.Parse("2006-01-02", querySlice[querySliceLen-1])
+			if err != nil {
+				PrintError(err)
+				break
 			}
 
-			taskHandler.AddTask(name, deadline) // обработать ошибку
+			err = ValidateDeadline(deadline)
+			if err != nil {
+				PrintError(err)
+				break
+			}
+
+			err = taskHandler.AddTask(name, deadline)
+			if err != nil {
+				PrintError(err)
+			}
 
 		case "list":
-			tasks, _ := taskHandler.GetAllTasks() // обработать ошибку
+			tasks, err := taskHandler.GetAllTasks()
+			if err != nil {
+				PrintError(err)
+				break
+			} 
+			
 			for _, task := range tasks {
 				fmt.Println(task.String())
 			}
@@ -58,8 +74,18 @@ func ReadConsole(taskHandler app.TaskHandler) {
 				break
 			}
 
-			taskId, _ := model.ParseID(querySlice[1])
-			task, _ := taskHandler.GetTaskById(taskId) // обработать ошибку
+			taskId, err := model.ParseID(querySlice[1])
+			if err != nil {
+				PrintError(err)
+				break
+			}
+
+			task, err := taskHandler.GetTaskById(taskId) 
+			if err != nil {
+				PrintError(err)
+				break
+			}
+
 			fmt.Println(task.String())
 
 		case "status":
@@ -68,40 +94,70 @@ func ReadConsole(taskHandler app.TaskHandler) {
 				break
 			}
 
-			taskId, _ := model.ParseID(querySlice[1])
-			status, _ := model.ParseStatus(querySlice[2])
-			err := taskHandler.UpdateTaskStatus(taskId, status)
+			taskId, err := model.ParseID(querySlice[1])
 			if err != nil {
-				fmt.Println(err.Error())
+				PrintError(err)
+				break
+			}
+
+			status, err := model.ParseStatus(querySlice[2])
+			if err != nil {
+				PrintError(err)
+				break
+			}
+
+			err = taskHandler.UpdateTaskStatus(taskId, status)
+			if err != nil {
+				PrintError(err)
 			}
 
 		case "edit":
 			if querySliceLen < 3 {
 				fmt.Println("Неверный формат команды")
+				break
 			}
 
-			taskId, _ := model.ParseID(querySlice[1])
+			taskId, err := model.ParseID(querySlice[1])
+			if err != nil {
+				PrintError(err)
+				break
+			}
 
-			deadline, errDeadline := time.Parse("2006-01-02", querySlice[querySliceLen-1])
-			if errDeadline != nil {
+			deadline, err := time.Parse("2006-01-02", querySlice[querySliceLen-1])
+			if err != nil {
 				name := strings.Join(querySlice[1:], " ")
-				taskHandler.EditTask(taskId, name, time.Time{}) // обработать ошибку
-			} 
+				err = taskHandler.EditTask(taskId, name, time.Time{})
+				if err != nil {
+					PrintError(err)
+					break
+				}
+			}
 			
 			name := ""
 			if querySliceLen > 4 {
 				name = strings.Join(querySlice[1:querySliceLen-2], " ")
 			} 
 			
-			taskHandler.EditTask(taskId, name, deadline) // обработать ошибку
+			err = taskHandler.EditTask(taskId, name, deadline)
+			if err != nil {
+				PrintError(err)
+			}
 
 		case "delete":
 			if querySliceLen < 2 {
 				fmt.Println("Неверный формат команды")
 			}
 
-			taskId, _ := model.ParseID(querySlice[1])
-			taskHandler.DeleteTask(taskId) // обработать ошибку
+			taskId, err := model.ParseID(querySlice[1])
+			if err != nil {
+				PrintError(err)
+				break
+			}
+
+			err = taskHandler.DeleteTask(taskId)
+			if err != nil {
+				PrintError(err)
+			}
 
 		default:
 			fmt.Println("Неизвестная команда!")
@@ -112,7 +168,7 @@ func ReadConsole(taskHandler app.TaskHandler) {
 
 	err := scanner.Err()
 	if err != nil {
-		fmt.Println("Ошибка: " + err.Error())
+		PrintError(err)
 	}
 }
 
@@ -154,4 +210,15 @@ func PrintStatuses() {
 	fmt.Println("in_progress")
 	fmt.Println("cancelled")
 	fmt.Println("done")
+}
+
+func PrintError(err error) {
+	fmt.Println("Ошибка: " + err.Error())
+}
+
+func ValidateDeadline(deadline time.Time) error {
+	if deadline.After(time.Now()) {
+		return fmt.Errorf("Неверный формат даты: дедлайн не может быть позже текущей даты")
+	}
+	return nil
 }

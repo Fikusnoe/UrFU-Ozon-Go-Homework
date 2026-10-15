@@ -44,7 +44,10 @@ func MakeNewTask(id TaskID, name string, status TaskStatus, deadline time.Time) 
 }
 
 func ParseID(strID string) (TaskID, error) {
-	intID, _ := strconv.Atoi(strID)
+	intID, err := strconv.Atoi(strID)
+	if err != nil {
+		return 0, err
+	}
 	taskID := TaskID(intID)
 	return taskID, nil
 }

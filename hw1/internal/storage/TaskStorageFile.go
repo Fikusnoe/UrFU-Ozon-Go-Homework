@@ -13,11 +13,15 @@ type TaskStorageFile struct {
 	NextID   model.TaskID
 }
 
-func (s *TaskStorageFile) GetNextID()(model.TaskID, error) {
-	tasks := s.LoadTasks()
-	currID := tasks[len(tasks) - 1].ID
+func (s *TaskStorageFile) GetNextID() (model.TaskID, error) {
+	tasks, err := s.LoadTasks()
+	if err != nil {
+		return model.TaskID(0), err
+	}
 
-	if int(currID) >= math.MaxInt {
+	currLastID := tasks[len(tasks) - 1].ID
+
+	if int(currLastID) >= math.MaxInt {
 		for i := 1; i <= (len(tasks) - 1); i++ {
 			if int(tasks[i].ID) != i {
 				return model.TaskID(i), nil
@@ -26,27 +30,39 @@ func (s *TaskStorageFile) GetNextID()(model.TaskID, error) {
 		return 0, fmt.Errorf("Превышено количество записей")
 	}
 
-	return currID + 1, nil
+	return currLastID + 1, nil
 }
 
 func (s *TaskStorageFile) Save(task model.Task) error {
-	tasks := s.LoadTasks()
+	tasks, err := s.LoadTasks()
+	if err != nil{
+		return err
+	}
 
 	tasks = append(tasks, task)
 
-	s.SaveTasks(tasks)
+	err = s.SaveTasks(tasks)
+	if err != nil{
+		return err
+	}
 
 	return nil
 }
 
 func (s *TaskStorageFile) GetAll() ([]model.Task, error) {
-	tasks := s.LoadTasks()
+	tasks, err := s.LoadTasks()
+	if err != nil{
+		return []model.Task{}, err
+	}
 
 	return tasks, nil
 }
 
 func (s *TaskStorageFile) GetByID(id model.TaskID) (model.Task, error) {
-	tasks := s.LoadTasks()
+	tasks, err := s.LoadTasks()
+	if err != nil {
+		return model.Task{}, err
+	}
 
 	for _, task := range tasks {
 		if task.ID == id {
@@ -58,23 +74,37 @@ func (s *TaskStorageFile) GetByID(id model.TaskID) (model.Task, error) {
 }
 
 func (s *TaskStorageFile) UpdateStatus(id model.TaskID, newStatus model.TaskStatus) error {
-	tasks := s.LoadTasks()
+	tasks, err := s.LoadTasks()
+	if err != nil{
+		return err
+	}
 
 	for index, task := range tasks {
 		if task.ID == id {
+			if task.Status == newStatus {
+				return fmt.Errorf("Текущий статус уже установлен.")
+			}
+
 			task.Status = newStatus
 			tasks[index] = task
-			break
+
+			err = s.SaveTasks(tasks)
+			if err != nil{
+				return err
+			}
+
+			return nil
 		}
 	}
 
-	s.SaveTasks(tasks)
-
-	return nil
+	return fmt.Errorf("Такой задачи нет!")
 }
 
 func (s *TaskStorageFile) EditTask(newTask model.Task) error {
-	tasks := s.LoadTasks()
+	tasks, err := s.LoadTasks()
+	if err != nil{
+		return err
+	}
 
 	for index, task := range tasks {
 		if task.ID == newTask.ID {
@@ -82,48 +112,73 @@ func (s *TaskStorageFile) EditTask(newTask model.Task) error {
 			task.Deadline = newTask.Deadline
 			task = newTask
 			tasks[index] = task
-			break
+
+			err = s.SaveTasks(tasks)
+			if err != nil{
+				return err
+			}
+
+			return nil
 		}
 	}
 
-	s.SaveTasks(tasks)
-
-	return nil
+	return fmt.Errorf("Такой задачи нет!")
 }
 
+
 func (s *TaskStorageFile) Delete(id model.TaskID) error {
-	tasks := s.LoadTasks()
+	tasks, err := s.LoadTasks()
+	if err != nil{
+		return err
+	}
+
+	if len(tasks) == 0 {
+		return fmt.Errorf("Список задач пуст")
+	}
 
 	for index, task := range tasks {
 		if task.ID == id {
 			tasks = append(tasks[:index], tasks[index+1:]...)
-			break
+
+			err = s.SaveTasks(tasks)
+			if err != nil{
+				return err
+			}
+
+			return nil
 		}
 	}
 
-	s.SaveTasks(tasks)
-
-	return nil
+	return fmt.Errorf("Такой задачи нет!")
 }
 
-func (s *TaskStorageFile) LoadTasks() []model.Task {
+func (s *TaskStorageFile) LoadTasks() ([]model.Task, error) {
 	data, err := os.ReadFile(s.filePath)
 	if err != nil {
-		return []model.Task{}
+		return []model.Task{}, err
 	}
 
 	tasks := []model.Task{}
 
-	json.Unmarshal(data, &tasks)
+	err = json.Unmarshal(data, &tasks)
+	if err != nil {
+		return []model.Task{}, err
+	}
 
-	return tasks
+	return tasks, nil
 }
 
 func (s *TaskStorageFile) SaveTasks(tasks []model.Task) error {
-	data, _ := json.MarshalIndent(tasks, "", " ")
+	data, err := json.MarshalIndent(tasks, "", " ")
+	if err != nil {
+		return err
+	}
 
-	os.WriteFile(s.filePath, data, 0644)
-
+	err = os.WriteFile(s.filePath, data, 0644)
+	if err != nil {
+		return err
+	}
+	
 	return nil
 }
 
