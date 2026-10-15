@@ -67,3 +67,4 @@ func ParseStatus(strStatus string) (TaskStatus, error) {
 
 	return status, nil
 }
+
