@@ -6,6 +6,7 @@ import (
 
 type TaskStorage interface {
     Save(task model.Task) error
+	GetNextID() model.TaskID
 	GetAll() ([]model.Task, error)
     GetByID(id model.TaskID) (model.Task, error)
     UpdateStatus(id model.TaskID, newStatus model.TaskStatus) error

@@ -9,6 +9,12 @@ type TaskStorageMap struct {
 	NextID model.TaskID
 }
 
+func (s *TaskStorageMap) GetNextID() model.TaskID {
+	nextID := s.NextID 
+	s.NextID++
+	return nextID
+}
+
 func (s *TaskStorageMap) Save(task model.Task) error {
 	s.TaskMap[s.NextID] = task 
 	return nil 

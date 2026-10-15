@@ -3,9 +3,10 @@ package cli
 import (
 	"bufio"
 	"fmt"
+	"hw1/internal/app"
 	"os"
 	"strings"
-	"hw1/internal/app"
+	"time"
 )
 
 func ReadConsole(taskHandler app.TaskHandler) {
@@ -17,6 +18,7 @@ func ReadConsole(taskHandler app.TaskHandler) {
 
 		rawQueryStr := scanner.Text()
 		querySlice := strings.Fields(rawQueryStr)
+		querySliceLen := len(querySlice)
 
 		command := querySlice[0]
 		switch command {
@@ -30,7 +32,9 @@ func ReadConsole(taskHandler app.TaskHandler) {
 			fmt.Print("\033[2J")
 			PrintInterface()
 		case "add":
-			taskHandler.AddTask()
+			name := strings.Join(querySlice[1:querySliceLen-2], " ")
+			deadline, _ := time.Parse("2006-01-02", querySlice[querySliceLen-1])
+			taskHandler.AddTask(name, deadline)
 		case "status":
 			taskHandler.UpdateTaskStatus()
 		case "edit":

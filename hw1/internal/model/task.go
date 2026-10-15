@@ -22,6 +22,7 @@ type Task struct {
 }
 
 func MakeNewTask(id TaskID, name string, status TaskStatus, deadline time.Time) Task {
+	
 	newTask := Task{
 		ID: id,
 		Name: name,
