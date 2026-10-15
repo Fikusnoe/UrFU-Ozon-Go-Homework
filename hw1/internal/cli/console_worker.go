@@ -40,6 +40,10 @@ func ReadConsole(taskHandler app.TaskHandler) {
 
 			name := strings.Join(querySlice[1:querySliceLen-2], " ")
 			deadline, _ := time.Parse("2006-01-02", querySlice[querySliceLen-1])
+			if deadline.After(time.Now()) {
+				fmt.Println("Неверный формат даты: дедлайн не может быть позже текущей даты")
+			}
+
 			taskHandler.AddTask(name, deadline) // обработать ошибку
 
 		case "list":

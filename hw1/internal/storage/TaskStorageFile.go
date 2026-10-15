@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"hw1/internal/model"
+	"math"
 	"os"
 )
 
@@ -12,10 +13,20 @@ type TaskStorageFile struct {
 	NextID   model.TaskID
 }
 
-func (s *TaskStorageFile) GetNextID() model.TaskID, error {
+func (s *TaskStorageFile) GetNextID()(model.TaskID, error) {
 	tasks := s.LoadTasks()
+	currID := tasks[len(tasks) - 1].ID
 
-	return model.TaskID(len(tasks) + 1)
+	if int(currID) >= math.MaxInt {
+		for i := 1; i <= (len(tasks) - 1); i++ {
+			if int(tasks[i].ID) != i {
+				return model.TaskID(i), nil
+			} 
+		}
+		return 0, fmt.Errorf("Превышено количество записей")
+	}
+
+	return currID + 1, nil
 }
 
 func (s *TaskStorageFile) Save(task model.Task) error {
@@ -116,9 +127,9 @@ func (s *TaskStorageFile) SaveTasks(tasks []model.Task) error {
 	return nil
 }
 
-func MakeNewStorageFile(filepath string) *TaskStorageFile {
+func MakeNewStorageFile(filePath string) *TaskStorageFile {
 	storage := TaskStorageFile{
-		filePath: filepath,
+		filePath: filePath,
 		NextID:   1,
 	}
 	return &storage

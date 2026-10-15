@@ -10,7 +10,7 @@ type TaskStorageMap struct {
 	NextID model.TaskID
 }
 
-func (s *TaskStorageMap) GetNextID() (model.Task, error) {
+func (s *TaskStorageMap) GetNextID() (model.TaskID, error) {
 	nextID := s.NextID 
 
 	s.NextID++

@@ -18,7 +18,7 @@ func MakeNewTaskHandler(storage TaskStorage) TaskHandler {
 
 func (ts *TaskHandler) AddTask(name string, deadline time.Time) {
 	status := model.StatusPlanned
-	id := ts.storage.GetNextID()
+	id, _ := ts.storage.GetNextID()
 	newTask := model.MakeNewTask(id, name, status, deadline)
 	ts.storage.Save(newTask)
 }
