@@ -49,7 +49,7 @@ func ReadConsole(taskHandler app.TaskHandler) {
 			}
 
 		case "show":
-			if querySliceLen < 2 {
+			if querySliceLen < 2 || querySliceLen > 2 {
 				fmt.Println("Неверный формат команды")
 				break
 			}

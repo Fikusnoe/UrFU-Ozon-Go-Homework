@@ -63,12 +63,12 @@ func (s *TaskStorageMap) Delete(id model.TaskID) error {
 	return nil 
 }
 
-func MakeNewStorageMap() TaskStorageMap {
+func MakeNewStorageMap() *TaskStorageMap {
 	newTaskMap := map[model.TaskID]model.Task{}
 
 	storage := TaskStorageMap{ 
 		TaskMap: newTaskMap,
-		NextID: 0,
+		NextID: 1,
 	} 
-	return storage
+	return &storage
 }

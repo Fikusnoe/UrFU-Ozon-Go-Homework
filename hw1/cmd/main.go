@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	storage := storage.MakeNewStorageMap()
+	storage := storage.MakeNewStorageFile("tasks.json")
 	
 	handler := app.MakeNewTaskHandler(storage)
 

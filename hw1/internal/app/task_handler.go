@@ -3,7 +3,6 @@ package app
 import (
 	"fmt"
 	"hw1/internal/model"
-	"hw1/internal/storage"
 	"slices"
 	"time"
 )
@@ -12,13 +11,12 @@ type TaskHandler struct {
 	storage TaskStorage
 }
 
-func MakeNewTaskHandler(storage storage.TaskStorageMap) TaskHandler {
-	handler := TaskHandler{storage: &storage}
+func MakeNewTaskHandler(storage TaskStorage) TaskHandler {
+	handler := TaskHandler{storage: storage}
 	return handler
 }
 
-
-func (ts *TaskHandler) AddTask(name string,deadline time.Time) {
+func (ts *TaskHandler) AddTask(name string, deadline time.Time) {
 	status := model.StatusPlanned
 	id := ts.storage.GetNextID()
 	newTask := model.MakeNewTask(id, name, status, deadline)
@@ -57,12 +55,17 @@ func (ts *TaskHandler) DeleteTask(id model.TaskID) error {
 }
 
 func SortTasks(tasks []model.Task) []model.Task {
-
 	slices.SortFunc(tasks, func(a, b model.Task) int {
-		if a.Deadline.Before(b.Deadline) { return 1 }
-		if a.Deadline.Before(b.Deadline) { return -1 } 
-		if a.ID < b.ID { return 1 } 
-		return -1 
+		if a.Deadline.Before(b.Deadline) {
+			return 1
+		}
+		if a.Deadline.Before(b.Deadline) {
+			return -1
+		}
+		if a.ID < b.ID {
+			return 1
+		}
+		return -1
 	})
 
 	return tasks

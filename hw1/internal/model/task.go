@@ -17,10 +17,10 @@ const (
 )
 
 type Task struct {
-	ID   TaskID
-	Name string
-	Status TaskStatus
-	Deadline time.Time
+	ID   TaskID `json:"id"`
+	Name string	`json:"title"`
+	Status TaskStatus `json:"status"`
+	Deadline time.Time `json:"deadline"`
 }
 
 func (s *Task) String() string {
