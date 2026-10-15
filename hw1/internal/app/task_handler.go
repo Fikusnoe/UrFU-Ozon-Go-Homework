@@ -74,15 +74,15 @@ func (ts *TaskHandler) DeleteTask(id model.TaskID) error {
 func SortTasks(tasks []model.Task) []model.Task {
 	slices.SortFunc(tasks, func(a, b model.Task) int {
 		if a.Deadline.Before(b.Deadline) {
-			return 1
-		}
-		if a.Deadline.Before(b.Deadline) {
 			return -1
 		}
-		if a.ID < b.ID {
+		if a.Deadline.After(b.Deadline) {
 			return 1
 		}
-		return -1
+		if a.ID < b.ID {
+			return -1
+		}
+		return 0
 	})
 
 	return tasks

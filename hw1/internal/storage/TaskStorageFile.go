@@ -19,13 +19,13 @@ func (s *TaskStorageFile) GetNextID() (model.TaskID, error) {
 		return model.TaskID(0), err
 	}
 
-	currLastID := tasks[len(tasks) - 1].ID
+	currLastID := tasks[len(tasks)-1].ID
 
 	if int(currLastID) >= math.MaxInt {
 		for i := 1; i <= (len(tasks) - 1); i++ {
 			if int(tasks[i].ID) != i {
 				return model.TaskID(i), nil
-			} 
+			}
 		}
 		return 0, fmt.Errorf("Превышено количество записей")
 	}
@@ -35,14 +35,14 @@ func (s *TaskStorageFile) GetNextID() (model.TaskID, error) {
 
 func (s *TaskStorageFile) Save(task model.Task) error {
 	tasks, err := s.LoadTasks()
-	if err != nil{
+	if err != nil {
 		return err
 	}
 
 	tasks = append(tasks, task)
 
 	err = s.SaveTasks(tasks)
-	if err != nil{
+	if err != nil {
 		return err
 	}
 
@@ -51,7 +51,7 @@ func (s *TaskStorageFile) Save(task model.Task) error {
 
 func (s *TaskStorageFile) GetAll() ([]model.Task, error) {
 	tasks, err := s.LoadTasks()
-	if err != nil{
+	if err != nil {
 		return []model.Task{}, err
 	}
 
@@ -75,7 +75,7 @@ func (s *TaskStorageFile) GetByID(id model.TaskID) (model.Task, error) {
 
 func (s *TaskStorageFile) UpdateStatus(id model.TaskID, newStatus model.TaskStatus) error {
 	tasks, err := s.LoadTasks()
-	if err != nil{
+	if err != nil {
 		return err
 	}
 
@@ -89,7 +89,7 @@ func (s *TaskStorageFile) UpdateStatus(id model.TaskID, newStatus model.TaskStat
 			tasks[index] = task
 
 			err = s.SaveTasks(tasks)
-			if err != nil{
+			if err != nil {
 				return err
 			}
 
@@ -102,19 +102,20 @@ func (s *TaskStorageFile) UpdateStatus(id model.TaskID, newStatus model.TaskStat
 
 func (s *TaskStorageFile) EditTask(newTask model.Task) error {
 	tasks, err := s.LoadTasks()
-	if err != nil{
+	if err != nil {
 		return err
 	}
 
 	for index, task := range tasks {
 		if task.ID == newTask.ID {
-			task.Name = newTask.Name
+			if newTask.Name != "" {
+				task.Name = newTask.Name
+			}
 			task.Deadline = newTask.Deadline
-			task = newTask
 			tasks[index] = task
 
 			err = s.SaveTasks(tasks)
-			if err != nil{
+			if err != nil {
 				return err
 			}
 
@@ -125,10 +126,9 @@ func (s *TaskStorageFile) EditTask(newTask model.Task) error {
 	return fmt.Errorf("Такой задачи нет!")
 }
 
-
 func (s *TaskStorageFile) Delete(id model.TaskID) error {
 	tasks, err := s.LoadTasks()
-	if err != nil{
+	if err != nil {
 		return err
 	}
 
@@ -141,7 +141,7 @@ func (s *TaskStorageFile) Delete(id model.TaskID) error {
 			tasks = append(tasks[:index], tasks[index+1:]...)
 
 			err = s.SaveTasks(tasks)
-			if err != nil{
+			if err != nil {
 				return err
 			}
 
@@ -178,7 +178,7 @@ func (s *TaskStorageFile) SaveTasks(tasks []model.Task) error {
 	if err != nil {
 		return err
 	}
-	
+
 	return nil
 }
 

@@ -43,6 +43,7 @@ func ReadConsole(taskHandler app.TaskHandler) {
 			if err != nil {
 				PrintError(err)
 			}
+			fmt.Println("Успешно сохранено")
 
 		case "list":
 			err := ListTasks(taskHandler, querySlice)
@@ -61,18 +62,21 @@ func ReadConsole(taskHandler app.TaskHandler) {
 			if err != nil {
 				PrintError(err)
 			}
+			fmt.Println("Статус успешно изменён")
 
 		case "edit":
 			err := EditTask(taskHandler, querySlice, querySliceLen)
 			if err != nil {
 				PrintError(err)
 			}
+			fmt.Println("Успешно изменено")
 
 		case "delete":
 			err := DeleteTask(taskHandler, querySlice, querySliceLen)
 			if err != nil {
 				PrintError(err)
 			}
+			fmt.Println("Успешно удалено")
 
 		default:
 			fmt.Println(ErrUnknownCommand.Error())
@@ -93,7 +97,7 @@ func Run(taskHandler app.TaskHandler) {
 }
 
 func PrintInterface() {
-	fmt.Println("TaskTracker ver 0.5")
+	fmt.Println("TaskTracker ver 1.0")
 	fmt.Println("Привет!")
 	fmt.Println("Команды:")
 	fmt.Println("help - полный список команд и их описание")
@@ -132,8 +136,8 @@ func PrintError(err error) {
 }
 
 func ValidateDeadline(deadline time.Time) error {
-	if deadline.After(time.Now()) {
-		return fmt.Errorf("Неверный формат даты: дедлайн не может быть позже текущей даты")
+	if deadline.Before(time.Now()) {
+		return fmt.Errorf("Неверный формат даты: дедлайн не может быть в прошлом")
 	}
 	return nil
 }
@@ -143,7 +147,7 @@ func AddTask(taskHandler app.TaskHandler, querySlice []string, querySliceLen int
 		return ErrInvalidCommandFormat
 	}
 
-	name := strings.Join(querySlice[1:querySliceLen-2], " ")
+	name := strings.Join(querySlice[1:querySliceLen-1], " ")
 	deadline, err := time.Parse("2006-01-02", querySlice[querySliceLen-1])
 	if err != nil {
 		return err
@@ -163,6 +167,8 @@ func AddTask(taskHandler app.TaskHandler, querySlice []string, querySliceLen int
 }
 
 func ListTasks(taskHandler app.TaskHandler, querySlice []string) error {
+	fmt.Println("Список всех задач: ")
+	fmt.Println("ID Заголовок Статус Дедлайн")
 	tasks, err := taskHandler.GetAllTasks()
 	if err != nil {
 		return err
@@ -176,6 +182,8 @@ func ListTasks(taskHandler app.TaskHandler, querySlice []string) error {
 }
 
 func ShowTaskById(taskHandler app.TaskHandler, querySlice []string, querySliceLen int) error {
+	fmt.Println("ID Заголовок Статус Дедлайн")
+
 	if querySliceLen < 2 || querySliceLen > 2 {
 		return ErrInvalidCommandFormat
 	}
@@ -238,7 +246,7 @@ func EditTask(taskHandler app.TaskHandler, querySlice []string, querySliceLen in
 	}
 
 	name := ""
-	if querySliceLen > 4 {
+	if querySliceLen >= 4 {
 		name = strings.Join(querySlice[1:querySliceLen-2], " ")
 	}
 
