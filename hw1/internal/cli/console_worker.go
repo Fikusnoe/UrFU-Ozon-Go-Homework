@@ -2,6 +2,7 @@ package cli
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"hw1/internal/app"
 	"hw1/internal/model"
@@ -10,12 +11,16 @@ import (
 	"time"
 )
 
+var (
+	ErrUnknownCommand       = errors.New("Неизвестная команда")
+	ErrInvalidCommandFormat = errors.New("Неверный формат команды")
+)
+
 func ReadConsole(taskHandler app.TaskHandler) {
-	
 	scanner := bufio.NewScanner(os.Stdin)
 	fmt.Println()
 	fmt.Print("Введите команду: ")
-	
+
 	for scanner.Scan() {
 		rawQueryStr := scanner.Text()
 		querySlice := strings.Fields(rawQueryStr)
@@ -34,133 +39,43 @@ func ReadConsole(taskHandler app.TaskHandler) {
 			PrintInterface()
 
 		case "add":
-			if querySliceLen < 3 {
-				fmt.Println("Неверный формат команды")
-				break
-			}
-
-			name := strings.Join(querySlice[1:querySliceLen-2], " ")
-			deadline, err := time.Parse("2006-01-02", querySlice[querySliceLen-1])
-			if err != nil {
-				PrintError(err)
-				break
-			}
-
-			err = ValidateDeadline(deadline)
-			if err != nil {
-				PrintError(err)
-				break
-			}
-
-			err = taskHandler.AddTask(name, deadline)
+			err := AddTask(taskHandler, querySlice, querySliceLen)
 			if err != nil {
 				PrintError(err)
 			}
 
 		case "list":
-			tasks, err := taskHandler.GetAllTasks()
+			err := ListTasks(taskHandler, querySlice)
 			if err != nil {
 				PrintError(err)
-				break
-			} 
-			
-			for _, task := range tasks {
-				fmt.Println(task.String())
 			}
 
 		case "show":
-			if querySliceLen < 2 || querySliceLen > 2 {
-				fmt.Println("Неверный формат команды")
-				break
-			}
-
-			taskId, err := model.ParseID(querySlice[1])
+			err := ShowTaskById(taskHandler, querySlice, querySliceLen)
 			if err != nil {
 				PrintError(err)
-				break
 			}
-
-			task, err := taskHandler.GetTaskById(taskId) 
-			if err != nil {
-				PrintError(err)
-				break
-			}
-
-			fmt.Println(task.String())
 
 		case "status":
-			if querySliceLen < 2 {
-				fmt.Println("Неверный формат команды")
-				break
-			}
-
-			taskId, err := model.ParseID(querySlice[1])
-			if err != nil {
-				PrintError(err)
-				break
-			}
-
-			status, err := model.ParseStatus(querySlice[2])
-			if err != nil {
-				PrintError(err)
-				break
-			}
-
-			err = taskHandler.UpdateTaskStatus(taskId, status)
+			err := ChangeTaskStatus(taskHandler, querySlice, querySliceLen)
 			if err != nil {
 				PrintError(err)
 			}
 
 		case "edit":
-			if querySliceLen < 3 {
-				fmt.Println("Неверный формат команды")
-				break
-			}
-
-			taskId, err := model.ParseID(querySlice[1])
-			if err != nil {
-				PrintError(err)
-				break
-			}
-
-			deadline, err := time.Parse("2006-01-02", querySlice[querySliceLen-1])
-			if err != nil {
-				name := strings.Join(querySlice[1:], " ")
-				err = taskHandler.EditTask(taskId, name, time.Time{})
-				if err != nil {
-					PrintError(err)
-					break
-				}
-			}
-			
-			name := ""
-			if querySliceLen > 4 {
-				name = strings.Join(querySlice[1:querySliceLen-2], " ")
-			} 
-			
-			err = taskHandler.EditTask(taskId, name, deadline)
+			err := EditTask(taskHandler, querySlice, querySliceLen)
 			if err != nil {
 				PrintError(err)
 			}
 
 		case "delete":
-			if querySliceLen < 2 {
-				fmt.Println("Неверный формат команды")
-			}
-
-			taskId, err := model.ParseID(querySlice[1])
-			if err != nil {
-				PrintError(err)
-				break
-			}
-
-			err = taskHandler.DeleteTask(taskId)
+			err := DeleteTask(taskHandler, querySlice, querySliceLen)
 			if err != nil {
 				PrintError(err)
 			}
 
 		default:
-			fmt.Println("Неизвестная команда!")
+			fmt.Println(ErrUnknownCommand.Error())
 		}
 		fmt.Println()
 		fmt.Print("Введите команду: ")
@@ -220,5 +135,135 @@ func ValidateDeadline(deadline time.Time) error {
 	if deadline.After(time.Now()) {
 		return fmt.Errorf("Неверный формат даты: дедлайн не может быть позже текущей даты")
 	}
+	return nil
+}
+
+func AddTask(taskHandler app.TaskHandler, querySlice []string, querySliceLen int) error {
+	if querySliceLen < 3 {
+		return ErrInvalidCommandFormat
+	}
+
+	name := strings.Join(querySlice[1:querySliceLen-2], " ")
+	deadline, err := time.Parse("2006-01-02", querySlice[querySliceLen-1])
+	if err != nil {
+		return err
+	}
+
+	err = ValidateDeadline(deadline)
+	if err != nil {
+		return err
+	}
+
+	err = taskHandler.AddTask(name, deadline)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func ListTasks(taskHandler app.TaskHandler, querySlice []string) error {
+	tasks, err := taskHandler.GetAllTasks()
+	if err != nil {
+		return err
+	}
+
+	for _, task := range tasks {
+		fmt.Println(task.String())
+	}
+
+	return nil
+}
+
+func ShowTaskById(taskHandler app.TaskHandler, querySlice []string, querySliceLen int) error {
+	if querySliceLen < 2 || querySliceLen > 2 {
+		return ErrInvalidCommandFormat
+	}
+
+	taskId, err := model.ParseID(querySlice[1])
+	if err != nil {
+		return err
+	}
+
+	task, err := taskHandler.GetTaskById(taskId)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(task.String())
+
+	return nil
+}
+
+func ChangeTaskStatus(taskHandler app.TaskHandler, querySlice []string, querySliceLen int) error {
+	if querySliceLen < 2 {
+		return ErrInvalidCommandFormat
+	}
+
+	taskId, err := model.ParseID(querySlice[1])
+	if err != nil {
+		return err
+	}
+
+	status, err := model.ParseStatus(querySlice[2])
+	if err != nil {
+		return err
+	}
+
+	err = taskHandler.UpdateTaskStatus(taskId, status)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func EditTask(taskHandler app.TaskHandler, querySlice []string, querySliceLen int) error {
+	if querySliceLen < 3 {
+		return ErrInvalidCommandFormat
+	}
+
+	taskId, err := model.ParseID(querySlice[1])
+	if err != nil {
+		return err
+	}
+
+	deadline, err := time.Parse("2006-01-02", querySlice[querySliceLen-1])
+	if err != nil {
+		name := strings.Join(querySlice[1:], " ")
+		err = taskHandler.EditTask(taskId, name, time.Time{})
+		if err != nil {
+			return err
+		}
+	}
+
+	name := ""
+	if querySliceLen > 4 {
+		name = strings.Join(querySlice[1:querySliceLen-2], " ")
+	}
+
+	err = taskHandler.EditTask(taskId, name, deadline)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func DeleteTask(taskHandler app.TaskHandler, querySlice []string, querySliceLen int) error {
+	if querySliceLen < 2 {
+		return ErrInvalidCommandFormat
+	}
+
+	taskId, err := model.ParseID(querySlice[1])
+	if err != nil {
+		return err
+	}
+
+	err = taskHandler.DeleteTask(taskId)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

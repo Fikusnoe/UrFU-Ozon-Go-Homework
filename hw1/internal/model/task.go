@@ -16,6 +16,8 @@ const (
 	StatusDone       TaskStatus = "Done"
 )
 
+var ErrTaskNotFound = errors.New("Неверный формат команды")
+
 type Task struct {
 	ID   TaskID `json:"id"`
 	Name string	`json:"title"`
