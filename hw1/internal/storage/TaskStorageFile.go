@@ -12,7 +12,7 @@ type TaskStorageFile struct {
 	NextID   model.TaskID
 }
 
-func (s *TaskStorageFile) GetNextID() model.TaskID {
+func (s *TaskStorageFile) GetNextID() model.TaskID, error {
 	tasks := s.LoadTasks()
 
 	return model.TaskID(len(tasks) + 1)

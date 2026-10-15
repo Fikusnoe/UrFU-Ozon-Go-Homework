@@ -118,7 +118,7 @@ func Run(taskHandler app.TaskHandler) {
 }
 
 func PrintInterface() {
-	fmt.Println("TaskTracker ver 0.1")
+	fmt.Println("TaskTracker ver 0.5")
 	fmt.Println("Привет!")
 	fmt.Println("Команды:")
 	fmt.Println("help - полный список команд и их описание")
