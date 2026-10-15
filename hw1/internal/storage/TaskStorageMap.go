@@ -1,6 +1,7 @@
 package storage
 
-import ( 
+import (
+	"fmt"
 	"hw1/internal/model"
 )
 
@@ -29,7 +30,12 @@ func (s *TaskStorageMap) GetAll() ([]model.Task, error) {
 }
 
 func (s *TaskStorageMap) GetByID(id model.TaskID) (model.Task, error) {
-	return s.TaskMap[id], nil 
+	task, ok := s.TaskMap[id]
+	if !ok {
+		return model.Task{}, fmt.Errorf("Такой задачи нет!")
+	}
+
+	return task, nil 
 }
 
 func (s *TaskStorageMap) UpdateStatus(id model.TaskID, newStatus model.TaskStatus) error {
