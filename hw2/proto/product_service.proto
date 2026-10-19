@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package product;
+
+option go_package = "github.com/Fikusnoe/hw2/pkg/api/product";
+
+service ProductService {
+    rpc GetProduct (GetProductRequest) returns (GetProductResponse);
+}
+
+message GetProductRequest {
+    int64 sku = 1;
+}
+
+message GetProductResponse {
+    int64 sku = 1;
+    string name = 2;
+    int32 price = 3;
+}
