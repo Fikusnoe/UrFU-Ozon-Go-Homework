@@ -7,11 +7,11 @@ import (
 	"strconv"
 )
 
-type JsonStorage struct {
+type JsonProductStorage struct {
 	filePath string
 }
 
-func (s *JsonStorage) LoadProducts() (map[int64]product.Product, error) {
+func (s *JsonProductStorage) LoadProducts() (map[int64]product.Product, error) {
 	fileData, err := os.ReadFile(s.filePath)
 	if err != nil {
 		return nil, err
@@ -36,8 +36,8 @@ func (s *JsonStorage) LoadProducts() (map[int64]product.Product, error) {
 	return productsMap, nil
 }
 
-func NewJsonStorage(filePath string) (*JsonStorage, error) {
-	JsonStorage := JsonStorage{
+func NewJsonProductStorage(filePath string) (*JsonProductStorage, error) {
+	JsonStorage := JsonProductStorage{
 		filePath: filePath,
 	}
 	return &JsonStorage, nil

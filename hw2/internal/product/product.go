@@ -9,11 +9,9 @@ import (
 	pb "hw2/pkg/api/product"
 )
 
-type Price uint32
-
 type Product struct {
 	Name  string `json:"name"`
-	Price Price `json:"price"`
+	Price uint32 `json:"price"`
 }
 
 type ProductService struct {
@@ -23,24 +21,20 @@ type ProductService struct {
 	pb.UnimplementedProductServiceServer
 }
 
-func NewProductService(storage Storage) *ProductService {
-	ProductService := ProductService{
-		Storage: storage,
-	}
-
-	return &ProductService
-}
-
-func (ps *ProductService) LoadProducts() error {
+func NewProductService(storage Storage) (*ProductService, error) {
 	loadedProducts := map[int64]Product{}
 
-	loadedProducts, err := ps.Storage.LoadProducts()
+	loadedProducts, err := storage.LoadProducts()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	ps.Products = loadedProducts
-	return nil
+	ProductService := ProductService{
+		Storage: storage,
+		Products: loadedProducts,
+	}
+
+	return &ProductService, nil
 }
 
 func (ps *ProductService) GetProduct(context context.Context, request *pb.GetProductRequest) (*pb.GetProductResponse, error) {
