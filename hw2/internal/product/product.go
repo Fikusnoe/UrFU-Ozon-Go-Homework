@@ -9,9 +9,11 @@ import (
 	pb "hw2/pkg/api/product"
 )
 
+type Price uint32
+
 type Product struct {
 	Name  string `json:"name"`
-	Price uint32 `json:"price"`
+	Price Price `json:"price"`
 }
 
 type ProductService struct {
@@ -47,7 +49,7 @@ func (ps *ProductService) GetProduct(context context.Context, request *pb.GetPro
 	}
 
 	product, ok := ps.Products[request.Sku]
-	if ok != true {
+	if !ok {
 		return nil, status.Error(codes.NotFound, "Информацию можно получить только по существующему товару")
 	}
 
