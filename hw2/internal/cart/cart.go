@@ -2,6 +2,8 @@ package cart
 
 import (
 	"context"
+	"fmt"
+
 	pb "hw2/pkg/api/product"
 )
 
@@ -30,7 +32,12 @@ func NewCartService(cs Storage, client pb.ProductServiceClient) CartService {
 	return CartService{CartStorage: cs, Client: client}
 }
 
-func (cs CartService) AddItem(ctx context.Context, userID UserID, sku int64, count uint32) error {
+func (cs *CartService) AddItem(ctx context.Context, userID UserID, sku int64, count uint32) error {
+	err := ValidateInput(userID, sku, count)
+	if err != nil {
+		return err
+	}
+	
 	cart, err := cs.CartStorage.LoadCart(userID)
 	if err != nil {
 		return err
@@ -54,14 +61,28 @@ func (cs CartService) AddItem(ctx context.Context, userID UserID, sku int64, cou
 		}
 	}
 
+	cs.CartStorage.SaveCart(userID, cart)
+
 	return nil
 }
 
-func (c CartService) GetCart(userID UserID) (Cart, error) {
-	cart, err := c.CartStorage.LoadCart(userID)
+func (cs *CartService) GetCart(userID UserID) (Cart, error) {
+	cart, err := cs.CartStorage.LoadCart(userID)
 	if err != nil {
-		return Cart{nil}, nil
+		return Cart{}, err
 	}
 
 	return cart, nil
+}
+
+func ValidateInput(userID UserID, sku int64, count uint32) error {
+	if userID <= 0 {
+		return fmt.Errorf("Идентификатор пользователя должен быть натуральным числом (больше нуля)")
+	} else if sku <= 0 {
+		return fmt.Errorf("SKU должен быть натуральным числом (больше нуля)")
+	} else if count <= 0 {
+		return fmt.Errorf("Количество должно быть натуральным числом (больше нуля)")
+	}
+
+	return nil
 }
