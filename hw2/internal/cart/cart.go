@@ -11,10 +11,10 @@ type User struct {
 }
 
 type CartItem struct {
-	Sku     int64
-	Count   uint32
+	Sku   int64
+	Count uint32
 	Price uint32
-	Name string
+	Name  string
 }
 
 type Cart struct {
@@ -23,22 +23,22 @@ type Cart struct {
 
 type CartService struct {
 	CartStorage Storage
-	Client pb.ProductServiceClient
+	Client      pb.ProductServiceClient
 }
 
 func NewCartService(cs Storage, client pb.ProductServiceClient) CartService {
-	return CartService{ CartStorage: cs, Client: client}
+	return CartService{CartStorage: cs, Client: client}
 }
 
-func (cs CartService) AddItem(ctx context.Context, userID UserID, sku int64) error {
+func (cs CartService) AddItem(ctx context.Context, userID UserID, sku int64, count uint32) error {
 	cart, err := cs.CartStorage.LoadCart(userID)
-	if err != nil{
+	if err != nil {
 		return err
 	}
 
 	item, exist := cart.Items[sku]
 	if exist {
-		item.Count++
+		item.Count += count
 		cart.Items[sku] = item
 	} else {
 		request := pb.GetProductRequest{Sku: sku}
@@ -47,24 +47,21 @@ func (cs CartService) AddItem(ctx context.Context, userID UserID, sku int64) err
 			return err
 		}
 
-		cart.Items[sku] = CartItem{ Sku: response.Sku, 
-			Count: 1, 
-			Price: uint32(response.Price), 
-			Name: response.Name,
+		cart.Items[sku] = CartItem{Sku: response.Sku,
+			Count: count,
+			Price: uint32(response.Price),
+			Name:  response.Name,
 		}
 	}
 
 	return nil
 }
 
-func (c CartService) GetCart(userID UserID) error {
+func (c CartService) GetCart(userID UserID) (Cart, error) {
 	cart, err := c.CartStorage.LoadCart(userID)
 	if err != nil {
-
+		return Cart{nil}, nil
 	}
 
-	
-
-	return nil
+	return cart, nil
 }
-
