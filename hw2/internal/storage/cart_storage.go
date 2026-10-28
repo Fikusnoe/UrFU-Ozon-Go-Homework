@@ -21,7 +21,9 @@ func (cs *CartStorage) SaveCart(userID cart.UserID, updatedCart cart.Cart) error
 func (cs *CartStorage) LoadCart(userID cart.UserID) (cart.Cart, error) {
 	userCart, ok := cs.carts[userID]
 	if !ok {
-		return cart.Cart{}, nil
+		userCart = cart.Cart{Items: make(map[int64]cart.CartItem)}
+		cs.carts[userID] = userCart
+		return userCart, nil
 	}
 
 	return userCart, nil

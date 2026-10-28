@@ -23,7 +23,7 @@ func run() error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	productStorage, err := storage.NewJsonProductStorage("products.json") 
+	productStorage, err := storage.NewJsonProductStorage("products.json")
 	if err != nil {
 		return err
 	}
@@ -41,15 +41,17 @@ func run() error {
 	server := grpc.NewServer()
 	pb.RegisterProductServiceServer(server, productService)
 
+	fmt.Println("Сервис product запущен")
+
 	errCh := make(chan error, 1)
 	go func() {
 		errCh <- server.Serve(lis)
 	}()
-	
+
 	select {
 	case err := <-errCh:
 		return err
-	case <- ctx.Done():
+	case <-ctx.Done():
 		go func() {
 			server.GracefulStop()
 		}()

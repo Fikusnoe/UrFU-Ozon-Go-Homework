@@ -3,6 +3,7 @@ package cart
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	pb "hw2/pkg/api/product"
 )
@@ -66,13 +67,37 @@ func (cs *CartService) AddItem(ctx context.Context, userID UserID, sku int64, co
 	return nil
 }
 
-func (cs *CartService) GetCart(userID UserID) (Cart, error) {
+func (cs *CartService) GetCart(userID UserID) ([]CartItem, uint32, error) {
 	cart, err := cs.CartStorage.LoadCart(userID)
 	if err != nil {
-		return Cart{}, err
+		return make([]CartItem, 0), 0,  err
 	}
 
-	return cart, nil
+	totalPrice := uint32(0)
+	for _, item := range cart.Items {
+		totalPrice += item.Price * item.Count 
+	}
+
+	items := SortItems(&cart)
+
+	return items, totalPrice, nil
+}
+
+func SortItems(c *Cart) []CartItem {
+	items := make([]CartItem, 0, len(c.Items))
+
+	skus := make([]int64, 0, len(c.Items))
+	for sku := range c.Items {
+		skus = append(skus, sku)
+	}
+
+	slices.Sort(skus)
+
+	for _, sku := range skus {
+		items = append(items, c.Items[sku])
+	}
+
+	return items
 }
 
 func ValidateInput(userID UserID, sku int64, count uint32) error {
