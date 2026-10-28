@@ -30,13 +30,17 @@ func (h *HTTPHandler) AddItem(w http.ResponseWriter, r *http.Request) {
 	sku, _ := strconv.ParseInt(r.PathValue("sku"), 10, 64)
 
 	body := addRequestBody{}
-	_ = json.NewDecoder(r.Body).Decode(&body)
+	err := json.NewDecoder(r.Body).Decode(&body)
+	if err != nil{
+		http.Error(w, "Неверный формат JSON в теле запроса", http.StatusBadRequest)
+		return
+	}
 
-	count := body.Count
-
-	err := h.CartService.AddItem(r.Context(), UserID(userID), sku, uint32(count))
+	err = h.CartService.AddItem(r.Context(), UserID(userID), sku,  body.Count)
 	if err != nil {
-		fmt.Println("Ошибка добавления предмета в корзину")
+		fmt.Printf("Ошибка добавления предмета в корзину: %v\n", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	writeJSON(w, http.StatusOK, "ok")

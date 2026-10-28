@@ -38,7 +38,7 @@ func (cs *CartService) AddItem(ctx context.Context, userID UserID, sku int64, co
 	if err != nil {
 		return err
 	}
-	
+
 	cart, err := cs.CartStorage.LoadCart(userID)
 	if err != nil {
 		return err
@@ -70,12 +70,12 @@ func (cs *CartService) AddItem(ctx context.Context, userID UserID, sku int64, co
 func (cs *CartService) GetCart(userID UserID) ([]CartItem, uint32, error) {
 	cart, err := cs.CartStorage.LoadCart(userID)
 	if err != nil {
-		return make([]CartItem, 0), 0,  err
+		return make([]CartItem, 0), 0, err
 	}
 
 	totalPrice := uint32(0)
 	for _, item := range cart.Items {
-		totalPrice += item.Price * item.Count 
+		totalPrice += item.Price * item.Count
 	}
 
 	items := SortItems(&cart)
@@ -105,7 +105,7 @@ func ValidateInput(userID UserID, sku int64, count uint32) error {
 		return fmt.Errorf("Идентификатор пользователя должен быть натуральным числом (больше нуля)")
 	} else if sku <= 0 {
 		return fmt.Errorf("SKU должен быть натуральным числом (больше нуля)")
-	} else if count <= 0 {
+	} else if count <= uint32(0) {
 		return fmt.Errorf("Количество должно быть натуральным числом (больше нуля)")
 	}
 
