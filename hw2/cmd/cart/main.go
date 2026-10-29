@@ -44,7 +44,7 @@ func run() error {
 	mux.HandleFunc("GET /user/{user_id}/cart", httpHandler.GetCart)
 
 	httpServer := &http.Server{
-		Addr:         ":8081",
+		Addr:         ":8080",
 		Handler:      mux,
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 15 * time.Second,
