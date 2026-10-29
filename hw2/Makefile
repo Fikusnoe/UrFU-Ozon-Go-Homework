@@ -1,6 +1,11 @@
-.PHONY: run-all:
+.PHONY: run-all generate
 
-.PHONY: generate:
+# Для Linux, использовал wsl
+run-all:
+	go run ./cmd/product_service/main.go & \
+	go run ./cmd/cart/main.go
+
+generate:
 	protoc --go_out=. \
 	--go-grpc_out=. \
 	--go_opt=module=github.com/Fikusnoe/hw2 \
