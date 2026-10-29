@@ -15,7 +15,7 @@ import (
 func main() {
 	err := run()
 	if err != nil {
-		log.Fatalf("Сервис Product упал: %v", err)
+		log.Fatalf("Service Product is down: %v", err)
 	}
 }
 
@@ -40,7 +40,7 @@ func run() error {
 
 	server := grpc.NewServer()
 	pb.RegisterProductServiceServer(server, productService)
-	log.Println("Сервис Product запущен")
+	log.Println("Service Product is up")
 
 	errCh := make(chan error, 1)
 	go func() {

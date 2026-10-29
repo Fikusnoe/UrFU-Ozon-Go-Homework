@@ -2,10 +2,11 @@ package product
 
 import (
 	"context"
+	"fmt"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	
+
 	pb "hw2/pkg/api/product"
 )
 
@@ -22,11 +23,9 @@ type ProductService struct {
 }
 
 func NewProductService(storage Storage) (*ProductService, error) {
-	loadedProducts := map[int64]Product{}
-
 	loadedProducts, err := storage.LoadProducts()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Failed to load Products: %w", err)
 	}
 
 	productService := ProductService{
@@ -37,7 +36,11 @@ func NewProductService(storage Storage) (*ProductService, error) {
 	return &productService, nil
 }
 
-func (ps *ProductService) GetProduct(context context.Context, request *pb.GetProductRequest) (*pb.GetProductResponse, error) {
+func (ps *ProductService) GetProduct(ctx context.Context, request *pb.GetProductRequest) (*pb.GetProductResponse, error) {
+	if request == nil {
+		return nil, status.Error(codes.InvalidArgument, "request is nil")
+	}
+	
 	if request.Sku <= 0 {
 		return nil, status.Error(codes.InvalidArgument, "Идентификатор товара должен быть натуральным числом (больше нуля)")
 	}
