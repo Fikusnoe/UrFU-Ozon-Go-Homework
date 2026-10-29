@@ -2,6 +2,7 @@ package cart
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"strconv"
@@ -12,7 +13,7 @@ type HTTPHandler struct {
 }
 
 type addRequestBody struct {
-	Count uint32 `json:"count"`
+	Count int32 `json:"count"`
 }
 
 type cartResponse struct {
@@ -25,18 +26,42 @@ func NewHTTPHandler(cartService *CartService) *HTTPHandler {
 }
 
 func (h *HTTPHandler) AddItem(w http.ResponseWriter, r *http.Request) {
-	userID, _ := strconv.ParseInt(r.PathValue("user_id"), 10, 64)
+	userID, err := strconv.ParseInt(r.PathValue("user_id"), 10, 64)
+	if err != nil {
+		http.Error(w,
+			"Идентификатор пользователя должен быть натуральным числом (больше нуля)",
+			http.StatusBadRequest,
+		)
+		return
+	}
 
-	sku, _ := strconv.ParseInt(r.PathValue("sku"), 10, 64)
+	sku, err := strconv.ParseInt(r.PathValue("sku"), 10, 64)
+	if err != nil || sku <= 0 {
+		http.Error(
+			w,
+			"SKU должен быть натуральным числом (больше нуля)",
+			http.StatusBadRequest,
+		)
+		return
+	}
 
 	body := addRequestBody{}
-	err := json.NewDecoder(r.Body).Decode(&body)
-	if err != nil{
+	err = json.NewDecoder(r.Body).Decode(&body)
+	if err != nil {
 		http.Error(w, "Неверный формат JSON в теле запроса", http.StatusBadRequest)
 		return
 	}
 
-	err = h.CartService.AddItem(r.Context(), UserID(userID), sku,  body.Count)
+	if body.Count <= 0 {
+		http.Error(
+			w,
+			"Количество должно быть натуральным числом (больше нуля)",
+			http.StatusBadRequest,
+		)
+		return
+	}
+
+	err = h.CartService.AddItem(r.Context(), UserID(userID), sku, uint32(body.Count))
 	if err != nil {
 		log.Printf("Ошибка добавления предмета в корзину: %v\n", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -47,9 +72,19 @@ func (h *HTTPHandler) AddItem(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *HTTPHandler) GetCart(w http.ResponseWriter, r *http.Request) {
-	userID, _ := strconv.ParseInt(r.PathValue("user_id"), 10, 64)
+	userID, err := strconv.ParseInt(r.PathValue("user_id"), 10, 64)
+	if err != nil {
+		http.Error(w,
+			"Идентификатор пользователя должен быть натуральным числом (больше нуля)",
+			http.StatusBadRequest,
+		)
+		return
+	}
 
-	items, totalPrice, _ := h.CartService.GetCart(UserID(userID))
+	items, totalPrice, err := h.CartService.GetCart(UserID(userID))
+	if err != nil {
+		h.handleServiceError(w, err)
+	}
 
 	response := cartResponse{
 		Items:      items,
@@ -62,5 +97,36 @@ func (h *HTTPHandler) GetCart(w http.ResponseWriter, r *http.Request) {
 func writeJSON(w http.ResponseWriter, code int, data any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
-	_ = json.NewEncoder(w).Encode(data)
+	err := json.NewEncoder(w).Encode(data)
+	if err != nil {
+		http.Error(w, "Неверный формат JSON в теле запроса", http.StatusBadRequest)
+		return
+	}
+}
+
+func (h *HTTPHandler) handleServiceError(w http.ResponseWriter, err error) {
+	var validationErr *ValidationError
+
+	switch {
+	case errors.As(err, &validationErr):
+		http.Error(w, validationErr.Message, http.StatusBadRequest)
+
+	case errors.Is(err, ErrProductNotFound):
+		http.Error(
+			w,
+			"SKU должен существовать в сервисе product-service",
+			http.StatusPreconditionFailed,
+		)
+
+	case errors.Is(err, ErrCartNotFound):
+		http.Error(w, "Корзина не найдена", http.StatusNotFound)
+
+	default:
+		log.Printf("internal error: %v", err)
+		http.Error(
+			w,
+			"Проблемы из-за неисправностей в системе",
+			http.StatusInternalServerError,
+		)
+	}
 }
