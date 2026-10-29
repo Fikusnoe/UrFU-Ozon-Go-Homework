@@ -1,10 +1,9 @@
 package main
 
 import (
-	"context"
-	"log"
 	"hw2/internal/product"
 	"hw2/internal/storage"
+	"log"
 	"net"
 
 	pb "hw2/pkg/api/product"
@@ -20,9 +19,6 @@ func main() {
 }
 
 func run() error {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
 	productStorage, err := storage.NewJsonProductStorage("products.json")
 	if err != nil {
 		return err
@@ -42,18 +38,8 @@ func run() error {
 	pb.RegisterProductServiceServer(server, productService)
 	log.Println("Service Product is up")
 
-	errCh := make(chan error, 1)
-	go func() {
-		errCh <- server.Serve(lis)
-	}()
-
-	select {
-	case err := <-errCh:
+	if err := server.Serve(lis); err != nil {
 		return err
-	case <-ctx.Done():
-		go func() {
-			server.GracefulStop()
-		}()
 	}
 
 	return nil
