@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -19,14 +18,11 @@ import (
 func main() {
 	err := run()
 	if err != nil {
-		log.Fatalf("Service Product is down: %v", err)
+		log.Fatalf("Service Cart is down: %v", err)
 	}
 }
 
 func run() error {
-	ctx, stop :=  context.WithCancel(context.Background())
-	defer stop()
-
 	conn, err := grpc.NewClient("localhost:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return fmt.Errorf("Не удалось подключиться к product service: %w", err)
@@ -46,31 +42,16 @@ func run() error {
 	httpServer := &http.Server{
 		Addr:         ":8080",
 		Handler:      mux,
-		ReadTimeout:  15 * time.Second,
-		WriteTimeout: 15 * time.Second,
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 5 * time.Second,
 	}
 
-	fmt.Println("Сервис cart запущен")
+	log.Println("Service Cart is up")
 
-	errCh := make(chan error, 1)
-	go func() {
-		errCh <- httpServer.ListenAndServe()
-	}()
-
-	select {
-		case err := <-errCh:
-		if err != http.ErrServerClosed {
-			return err
-		}
-		return nil
-		case <-ctx.Done():
-			shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-			defer cancel()
-			err := httpServer.Shutdown(shutdownCtx)
-			if  err != nil {
-				return err
-			}
-		}
+	err = httpServer.ListenAndServe()
+	if err != nil {
+		return fmt.Errorf("server failed: %w", err)
+	}
 
 	return nil
 }

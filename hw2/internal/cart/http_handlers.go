@@ -84,6 +84,7 @@ func (h *HTTPHandler) GetCart(w http.ResponseWriter, r *http.Request) {
 	items, totalPrice, err := h.CartService.GetCart(UserID(userID))
 	if err != nil {
 		h.handleServiceError(w, err)
+		return
 	}
 
 	response := cartResponse{
