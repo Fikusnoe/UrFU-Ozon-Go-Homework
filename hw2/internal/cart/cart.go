@@ -10,14 +10,14 @@ import (
 
 type UserID int64
 type User struct {
-	UserID UserID
+	userID UserID
 }
 
 type CartItem struct {
-	Sku   int64
-	Count uint32
-	Price uint32
-	Name  string
+	Sku   int64  `json:"sku"`
+	Count uint32 `json:"count"`
+	Price uint32 `json:"price"`
+	Name  string `json:"name"`
 }
 
 type Cart struct {
