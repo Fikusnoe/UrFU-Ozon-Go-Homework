@@ -9,8 +9,8 @@ type CartStorage struct {
 }
 
 func NewCartStorage() *CartStorage {
-	newCartStorage := CartStorage{carts: map[cart.UserID]cart.Cart{}}
-	return &newCartStorage
+	cartStorage := CartStorage{carts: map[cart.UserID]cart.Cart{}}
+	return &cartStorage
 }
 
 func (cs *CartStorage) SaveCart(userID cart.UserID, updatedCart cart.Cart) error {
@@ -20,10 +20,8 @@ func (cs *CartStorage) SaveCart(userID cart.UserID, updatedCart cart.Cart) error
 
 func (cs *CartStorage) LoadCart(userID cart.UserID) (cart.Cart, error) {
 	userCart, ok := cs.carts[userID]
-	if !ok {
-		userCart = cart.Cart{Items: make(map[int64]cart.CartItem)}
-		cs.carts[userID] = userCart
-		return userCart, nil
+	if !ok  {
+		return cart.Cart{}, cart.ErrCartNotFound
 	}
 
 	return userCart, nil

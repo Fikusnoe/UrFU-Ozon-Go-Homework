@@ -2,7 +2,7 @@ package cart
 
 import (
 	"encoding/json"
-	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 )
@@ -38,7 +38,7 @@ func (h *HTTPHandler) AddItem(w http.ResponseWriter, r *http.Request) {
 
 	err = h.CartService.AddItem(r.Context(), UserID(userID), sku,  body.Count)
 	if err != nil {
-		fmt.Printf("Ошибка добавления предмета в корзину: %v\n", err)
+		log.Printf("Ошибка добавления предмета в корзину: %v\n", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 
@@ -18,7 +19,7 @@ import (
 func main() {
 	err := run()
 	if err != nil {
-		fmt.Println(err.Error())
+		log.Fatalf("Service Product is down: %v", err)
 	}
 }
 
@@ -36,7 +37,7 @@ func run() error {
 	cartStorage := storage.NewCartStorage()
 	cartService := cart.NewCartService(cartStorage, productClient)
 
-	httpHandler := cart.NewHTTPHandler(&cartService)
+	httpHandler := cart.NewHTTPHandler(cartService)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /user/{user_id}/cart/{sku}", httpHandler.AddItem) 
