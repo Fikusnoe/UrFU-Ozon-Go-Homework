@@ -29,12 +29,12 @@ func NewProductService(storage Storage) (*ProductService, error) {
 		return nil, err
 	}
 
-	ProductService := ProductService{
+	productService := ProductService{
 		Storage: storage,
 		Products: loadedProducts,
 	}
 
-	return &ProductService, nil
+	return &productService, nil
 }
 
 func (ps *ProductService) GetProduct(context context.Context, request *pb.GetProductRequest) (*pb.GetProductResponse, error) {
