@@ -42,9 +42,9 @@ type CartService struct {
 	mu          *sync.RWMutex
 }
 
-type RPCResult struct{
+type rpcResult struct {
 	data *pb.GetProductResponse
-	err error
+	err  error
 }
 
 func NewCartService(cs Storage, client pb.ProductServiceClient) *CartService {
@@ -74,7 +74,7 @@ func ValidateUserId(userID UserID) error {
 	return nil
 }
 
-func (cs *CartService) MakeProductRPCRequest(ctx context.Context, sku int64) (*pb.GetProductResponse, error){
+func (cs *CartService) MakeProductRPCRequest(ctx context.Context, sku int64) (*pb.GetProductResponse, error) {
 	request := pb.GetProductRequest{Sku: sku}
 	response, err := cs.Client.GetProduct(ctx, &request)
 	if err != nil {
@@ -84,15 +84,15 @@ func (cs *CartService) MakeProductRPCRequest(ctx context.Context, sku int64) (*p
 
 		case codes.InvalidArgument:
 
-			return nil, 
-			&ValidationError{
-				Message: "SKU должен быть натуральным числом (больше нуля)",
-			}
+			return nil,
+				&ValidationError{
+					Message: "SKU должен быть натуральным числом (больше нуля)",
+				}
 
 		default:
 			return nil, fmt.Errorf("get product: %w", err)
 		}
 	}
-	
+
 	return response, nil
 }

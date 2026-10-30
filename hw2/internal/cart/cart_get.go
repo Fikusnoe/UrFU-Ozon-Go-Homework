@@ -15,6 +15,7 @@ func (cs *CartService) GetCart(ctx context.Context, userID UserID) ([]CartItem, 
 		return nil, 0, err
 	}
 
+	cartSnapshot := []CartItem{}
 	cs.mu.RLock()
 
 	cart, err := cs.CartStorage.LoadCart(userID)
@@ -26,61 +27,64 @@ func (cs *CartService) GetCart(ctx context.Context, userID UserID) ([]CartItem, 
 
 		return nil, 0, fmt.Errorf("failed to get cart: %w", err)
 	}
+
+	for sku, item := range cart.Items {
+		cartSnapshot = append(cartSnapshot, CartItem{Sku: sku, Count: item.Count})
+	}
+
 	cs.mu.RUnlock()
 
-	cartLen := len(cart.Items)
+	cartLen := len(cartSnapshot)
 	if cartLen == 0 {
 		return nil, 0, ErrCartNotFound
 	}
 
-	cxtWithDeadline, cancel := context.WithTimeout(ctx, 5*time.Second)
+	requestCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
-	RPCResults := make([]RPCResult, cartLen)
+	rpcResults := make([]rpcResult, cartLen)
 
 	var wg sync.WaitGroup
-	index := 0
-	for i, _ := range cart.Items {
+	for i, item := range cartSnapshot {
 		wg.Add(1)
 
-		go func(index int) {
-			response, err := cs.MakeProductRPCRequest(cxtWithDeadline, i)
-			RPCResults[index] = RPCResult{data: response, err: err}
+		go func(index int, checkItem CartItem) {
 			defer wg.Done()
-		}(index)
-		index++
+			response, err := cs.MakeProductRPCRequest(requestCtx, checkItem.Sku)
+			rpcResults[index] = rpcResult{data: response, err: err}
+		}(i, item)
 	}
 	wg.Wait()
 
-	for _, result := range RPCResults {
+	for i, result := range rpcResults {
 		if result.err != nil {
 			return nil, 0, result.err
 		}
+		item := cartSnapshot[i]
+		item.Name = result.data.Name
+		item.Price = uint32(result.data.Price)
+		cartSnapshot[i] = item
 	}
 
 	totalPrice := uint32(0)
-	for _, item := range cart.Items {
+	for _, item := range cartSnapshot {
 		totalPrice += item.Price * item.Count
 	}
 
-	items := SortItems(&cart)
+	sortedItems := SortItems(cartSnapshot)
 
-	return items, totalPrice, nil
+	return sortedItems, totalPrice, nil
 }
 
-func SortItems(c *Cart) []CartItem {
-	items := make([]CartItem, 0, len(c.Items))
-
-	skus := make([]int64, 0, len(c.Items))
-	for sku := range c.Items {
-		skus = append(skus, sku)
-	}
-
-	slices.Sort(skus)
-
-	for _, sku := range skus {
-		items = append(items, c.Items[sku])
-	}
+func SortItems(items []CartItem) []CartItem {
+	slices.SortFunc(items, func(a, b CartItem) int {
+		if a.Sku > b.Sku {
+			return 1
+		} else if a.Sku < b.Sku {
+			return -1
+		}
+		return 0
+	})
 
 	return items
 }

@@ -63,8 +63,7 @@ func (h *HTTPHandler) AddItem(w http.ResponseWriter, r *http.Request) {
 
 	err = h.CartService.AddItem(r.Context(), UserID(userID), sku, uint32(body.Count))
 	if err != nil {
-		log.Printf("Ошибка добавления предмета в корзину: %v\n", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		h.handleServiceError(w, err)
 		return
 	}
 
