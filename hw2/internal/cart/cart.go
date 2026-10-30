@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"sync"
 
 	pb "hw2/pkg/api/product"
 
@@ -39,10 +40,11 @@ type Cart struct {
 type CartService struct {
 	CartStorage Storage
 	Client      pb.ProductServiceClient
+	mu          *sync.RWMutex
 }
 
 func NewCartService(cs Storage, client pb.ProductServiceClient) *CartService {
-	return &CartService{CartStorage: cs, Client: client}
+	return &CartService{CartStorage: cs, Client: client, mu: &sync.RWMutex{}}
 }
 
 func (cs *CartService) AddItem(ctx context.Context, userID UserID, sku int64, count uint32) error {
@@ -50,6 +52,9 @@ func (cs *CartService) AddItem(ctx context.Context, userID UserID, sku int64, co
 	if err != nil {
 		return err
 	}
+
+	cs.mu.Lock()
+	defer cs.mu.Unlock()
 
 	userCart, err := cs.CartStorage.LoadCart(userID)
 	if err != nil {
@@ -102,6 +107,9 @@ func (cs *CartService) GetCart(userID UserID) ([]CartItem, uint32, error) {
 	if err != nil {
 		return nil, 0, err
 	}
+
+	cs.mu.RLock()
+	defer cs.mu.RUnlock()
 
 	cart, err := cs.CartStorage.LoadCart(userID)
 	if err != nil {
