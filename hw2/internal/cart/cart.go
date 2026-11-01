@@ -24,8 +24,6 @@ func (e *ValidationError) Error() string {
 	return e.Message
 }
 
-
-
 type CartService struct {
 	CartStorage Storage
 	Client      pb.ProductServiceClient
