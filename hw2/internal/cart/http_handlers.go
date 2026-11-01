@@ -3,6 +3,7 @@ package cart
 import (
 	"encoding/json"
 	"errors"
+	"hw2/internal/domain"
 	"log"
 	"net/http"
 	"strconv"
@@ -17,7 +18,7 @@ type addRequestBody struct {
 }
 
 type cartResponse struct {
-	Items      []CartItem `json:"items"`
+	Items      []domain.CartItem `json:"items"`
 	TotalPrice uint32     `json:"total_price"`
 }
 
@@ -61,7 +62,7 @@ func (h *HTTPHandler) AddItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.CartService.AddItem(r.Context(), UserID(userID), sku, uint32(body.Count))
+	err = h.CartService.AddItem(r.Context(), domain.UserID(userID), sku, uint32(body.Count))
 	if err != nil {
 		h.handleServiceError(w, err)
 		return
@@ -80,7 +81,7 @@ func (h *HTTPHandler) GetCart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	items, totalPrice, err := h.CartService.GetCart(r.Context(), UserID(userID))
+	items, totalPrice, err := h.CartService.GetCart(r.Context(), domain.UserID(userID))
 	if err != nil {
 		h.handleServiceError(w, err)
 		return

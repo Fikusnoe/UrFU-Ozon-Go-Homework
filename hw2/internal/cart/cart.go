@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"sync"
 
+	"hw2/internal/domain"
 	pb "hw2/pkg/api/product"
 
 	"google.golang.org/grpc/codes"
@@ -23,18 +24,7 @@ func (e *ValidationError) Error() string {
 	return e.Message
 }
 
-type UserID int64
 
-type CartItem struct {
-	Sku   int64  `json:"sku"`
-	Count uint32 `json:"count"`
-	Price uint32 `json:"price"`
-	Name  string `json:"name"`
-}
-
-type Cart struct {
-	Items map[int64]CartItem
-}
 
 type CartService struct {
 	CartStorage Storage
@@ -51,7 +41,7 @@ func NewCartService(cs Storage, client pb.ProductServiceClient) *CartService {
 	return &CartService{CartStorage: cs, Client: client, mu: &sync.RWMutex{}}
 }
 
-func ValidateInput(userID UserID, sku int64, count uint32) error {
+func ValidateInput(userID domain.UserID, sku int64, count uint32) error {
 	err := ValidateUserId(userID)
 	if err != nil {
 		return err
@@ -66,7 +56,7 @@ func ValidateInput(userID UserID, sku int64, count uint32) error {
 	return nil
 }
 
-func ValidateUserId(userID UserID) error {
+func ValidateUserId(userID domain.UserID) error {
 	if userID <= 0 {
 		return &ValidationError{"Идентификатор пользователя должен быть натуральным числом (больше нуля)"}
 	}
