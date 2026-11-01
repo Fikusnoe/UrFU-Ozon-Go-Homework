@@ -1,8 +1,9 @@
-package product
+package product_test
 
 import (
 	"context"
-	"hw2/internal/stub"
+	"hw2/internal/fake"
+	"hw2/internal/product"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -14,7 +15,7 @@ import (
 
 func TestGetProduct(t *testing.T) {
 	t.Parallel()
-	st := stub.NewStubProductStorage()
+	st := fake.NewProductStorage()
 
 	tests := []struct {
 		name    string
@@ -47,7 +48,7 @@ func TestGetProduct(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			svc, err := NewProductService(st)
+			svc, err := product.NewProductService(st)
 			require.NoError(t, err)
 
 			got, err := svc.GetProduct(context.Background(), tt.request)
@@ -61,7 +62,7 @@ func TestGetProduct(t *testing.T) {
 
 func TestGetProductSuccess(t *testing.T) {
 	t.Parallel()
-	st := stub.NewStubProductStorage()
+	st := fake.NewProductStorage()
 
 	tests := []struct {
 		name  string
@@ -87,7 +88,7 @@ func TestGetProductSuccess(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			svc, err := NewProductService(st)
+			svc, err := product.NewProductService(st)
 			require.NoError(t, err)
 
 			got, err := svc.GetProduct(context.Background(), &pb.GetProductRequest{Sku: tt.sku})

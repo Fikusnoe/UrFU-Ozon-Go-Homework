@@ -1,13 +1,13 @@
-package stub
+package fake
 
 import (
 	"hw2/internal/domain"
 )
 
-type StubProductStorage struct {
+type ProductStorage struct {
 }
 
-func (s *StubProductStorage) LoadProducts() (map[int64]domain.Product, error) {
+func (s *ProductStorage) LoadProducts() (map[int64]domain.Product, error) {
 	dataMap := map[int64]domain.Product{
 		1076963: {
 			Name:  "Теория нравственных чувств | Смит Адам",
@@ -36,7 +36,7 @@ func (s *StubProductStorage) LoadProducts() (map[int64]domain.Product, error) {
 	return dataMap, nil
 }
 
-func NewStubProductStorage() *StubProductStorage {
-	storage := StubProductStorage{}
+func NewProductStorage() *ProductStorage {
+	storage := ProductStorage{}
 	return &storage
 }
