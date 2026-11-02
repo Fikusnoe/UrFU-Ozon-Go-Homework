@@ -8,49 +8,57 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
 	//pb "hw2/pkg/api/product"
 )
+
+type addStep struct {
+	userID         int64
+	sku            int64
+	count          int64
+	wantName       string
+	wantTotalPrice uint32
+	wantCount      uint32
+}
 
 func TestAddItem(t *testing.T) {
 	t.Parallel()
 	stProduct := fake.NewProductStorage()
 
 	tests := []struct {
-		name string
+		name   string
 		userID int64
-		sku int64
-		count int64
-		isErr   error
-    	asErr   **cart.ValidationError
+		sku    int64
+		count  int64
+		isErr  error
+		asErr  **cart.ValidationError
 	}{
 		{
-			name: "negative user id",
+			name:   "negative user id",
 			userID: -1,
-			sku: 1076963,
-			count: 1,
-			asErr: new(*cart.ValidationError),
+			sku:    1076963,
+			count:  1,
+			asErr:  new(*cart.ValidationError),
 		},
 		{
-			name: "negative sku",
+			name:   "negative sku",
 			userID: 1,
-			sku: -1,
-			count: 1,
-			asErr: new(*cart.ValidationError),
+			sku:    -1,
+			count:  1,
+			asErr:  new(*cart.ValidationError),
 		},
 		{
-			name: "zero count",
+			name:   "zero count",
 			userID: 1,
-			sku: 1076963,
-			count: 0,
-			asErr: new(*cart.ValidationError),
+			sku:    1076963,
+			count:  0,
+			asErr:  new(*cart.ValidationError),
 		},
 		{
-			name: "not found",
+			name:   "not found",
 			userID: 1,
-			sku: 311111111,
-			count: 1,
-			isErr: cart.ErrProductNotFound,
+			sku:    311111111,
+			count:  1,
+			isErr:  cart.ErrProductNotFound,
 		},
 	}
 
@@ -66,7 +74,7 @@ func TestAddItem(t *testing.T) {
 			err := svc.AddItem(context.Background(), domain.UserID(tt.userID), tt.sku, uint32(tt.count))
 
 			require.Error(t, err)
-			
+
 			if tt.isErr != nil {
 				require.ErrorIs(t, err, tt.isErr)
 			}
@@ -77,46 +85,122 @@ func TestAddItem(t *testing.T) {
 	}
 }
 
-//func TestGetProductSuccess(t *testing.T) {
-//	t.Parallel()
-//	st := stub.NewStubProductStorage()
+func TestAddItemSuccess(t *testing.T) {
+	t.Parallel()
+	stProduct := fake.NewProductStorage()
 
-//	tests := []struct {
-//		name  string
-//		title string
-//		sku   int64
-//		price int64
-//	}{
-//		{
-//			name:  "success1",
-//			title: "Теория нравственных чувств | Смит Адам",
-//			sku:   1076963,
-//			price: 3379,
-//		},
-//		{
-//			name:  "success2",
-//			title: "Планетарный проект. От устойчивого развития к управляемой гармонии",
-//			sku:   135399359,
-//			price: 1571,
-//		},
-//	}
+	tests := []struct {
+		name  string
+		steps []addStep
+	}{
+		{
+			name: "successOneUserOneItem",
+			steps: []addStep{
+				{
+					userID:         1,
+					sku:            1076963,
+					count:          1,
+					wantName:       "Теория нравственных чувств | Смит Адам",
+					wantTotalPrice: 3379,
+					wantCount:      1,
+				},
+			},
+		},
+		{
+			name: "successOneUserSameItem",
+			steps: []addStep{
+				{
+					userID:         1,
+					sku:            1076963,
+					count:          1,
+					wantName:       "Теория нравственных чувств | Смит Адам",
+					wantTotalPrice: 3379,
+					wantCount:      1,
+				},
+				{
+					userID:         1,
+					sku:            1076963,
+					count:          2,
+					wantName:       "Теория нравственных чувств | Смит Адам",
+					wantTotalPrice: 10137,
+					wantCount:      3,
+				},
+			},
+		},
+		{
+			name: "successSameUserAnotherSku",
+			steps: []addStep{
+				{
+					userID:         1,
+					sku:            1076963,
+					count:          1,
+					wantName:       "Теория нравственных чувств | Смит Адам",
+					wantTotalPrice: 3379,
+					wantCount:      1,
+				},
+				{
+					userID:         1,
+					sku:            1148162,
+					count:          1,
+					wantName:       "Кулинар Гуров",
+					wantTotalPrice: 6310,
+					wantCount:      1,
+				},
+			},
+		},
+		{
+			name: "successDiffUser",
+			steps: []addStep{
+				{
+					userID:         1,
+					sku:            1076963,
+					count:          1,
+					wantName:       "Теория нравственных чувств | Смит Адам",
+					wantTotalPrice: 3379,
+					wantCount:      1,
+				},
+				{
+					userID:         2,
+					sku:            1148162,
+					count:          1,
+					wantName:       "Кулинар Гуров",
+					wantTotalPrice: 2931,
+					wantCount:      1,
+				},
+			},
+		},
+	}
 
-//	for _, tt := range tests {
-//		t.Run(tt.name, func(t *testing.T) {
-//			t.Parallel()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			stCart := fake.NewCartStorage()
+			client := fake.NewProductServiceClient(*stProduct)
+			svc := cart.NewCartService(stCart, client)
 
-//			svc, err := NewProductService(st)
-//			require.NoError(t, err)
+			for _, step := range tt.steps {
 
-//			got, err := svc.GetProduct(context.Background(), &pb.GetProductRequest{Sku: tt.sku})
+				err := svc.AddItem(context.Background(), domain.UserID(step.userID), step.sku, uint32(step.count))
+				require.NoError(t, err)
 
-//			require.NoError(t, err)
-//			require.Equal(t,
-//				&pb.GetProductResponse{
-//					Sku:   tt.sku,
-//					Name:  tt.title,
-//					Price: int32(tt.price),
-//				}, got)
-//		})
-//	}
-//}
+				gotItems, gotTotalPrice, err := svc.GetCart(context.Background(), domain.UserID(step.userID))
+				require.NoError(t, err)
+
+				require.Equal(t, step.wantTotalPrice, gotTotalPrice)
+
+				haveItem := false
+				for _, item := range gotItems{
+					if item.Sku == step.sku{
+						haveItem = true
+						require.Equal(t, step.wantCount, item.Count)
+						require.Equal(t, step.wantName, item.Name)
+					}
+				}
+
+				if !haveItem {
+					require.Fail(t, "Item not added")
+				}
+			}
+		})
+	}
+}
