@@ -1,6 +1,7 @@
 package fake
 
 import (
+	"errors"
 	"hw2/internal/cart"
 	"hw2/internal/domain"
 )
@@ -26,4 +27,32 @@ func (cs *CartStorage) LoadCart(userID domain.UserID) (domain.Cart, error) {
 	}
 
 	return userCart, nil
+}
+
+func (cs *CartStorage) AddItemDirectly(userID domain.UserID, updatedCart domain.Cart, sku int64, count uint32, price uint32, name string) error {
+	userCart, err := cs.LoadCart(userID)
+	if err != nil {
+		if errors.Is(err, cart.ErrCartNotFound) {
+			userCart = domain.Cart{Items: map[int64]domain.CartItem{}}
+		} else {
+			return err
+		}
+	}
+
+	item, exist := userCart.Items[sku]
+	if exist {
+		item.Count += count
+		userCart.Items[sku] = item
+	} else {
+		userCart.Items[sku] = domain.CartItem{
+			Sku: sku,
+			Count: count,
+			Price: uint32(price),
+			Name:  name,
+		}
+	}
+
+	_ = cs.SaveCart(userID, userCart)
+
+	return nil
 }

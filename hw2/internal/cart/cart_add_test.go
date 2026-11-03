@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	//pb "hw2/pkg/api/product"
 )
 
 type addStep struct {
@@ -189,8 +188,8 @@ func TestAddItemSuccess(t *testing.T) {
 				require.Equal(t, step.wantTotalPrice, gotTotalPrice)
 
 				haveItem := false
-				for _, item := range gotItems{
-					if item.Sku == step.sku{
+				for _, item := range gotItems {
+					if item.Sku == step.sku {
 						haveItem = true
 						require.Equal(t, step.wantCount, item.Count)
 						require.Equal(t, step.wantName, item.Name)
