@@ -14,6 +14,9 @@ type getStep struct {
 	userID         int64
 	sku            int64
 	count          int64
+	name           string
+	price          uint32
+	wantSku        int64
 	wantName       string
 	wantTotalPrice uint32
 	wantCount      uint32
@@ -55,7 +58,7 @@ func TestGetItem(t *testing.T) {
 
 			svc := cart.NewCartService(stCart, client)
 
-			_, _ , err := svc.GetCart(context.Background(), domain.UserID(tt.userID))
+			_, _, err := svc.GetCart(context.Background(), domain.UserID(tt.userID))
 			require.Error(t, err)
 
 			if tt.isErr != nil {
@@ -83,6 +86,8 @@ func TestGetItemSuccess(t *testing.T) {
 					userID:         1,
 					sku:            1076963,
 					count:          1,
+					name:           "Теория нравственных чувств | Смит Адам",
+					wantSku:        1076963,
 					wantName:       "Теория нравственных чувств | Смит Адам",
 					wantTotalPrice: 3379,
 					wantCount:      1,
@@ -96,6 +101,8 @@ func TestGetItemSuccess(t *testing.T) {
 					userID:         1,
 					sku:            1076963,
 					count:          1,
+					name:           "Теория нравственных чувств | Смит Адам",
+					wantSku:        1076963,
 					wantName:       "Теория нравственных чувств | Смит Адам",
 					wantTotalPrice: 3379,
 					wantCount:      1,
@@ -104,6 +111,8 @@ func TestGetItemSuccess(t *testing.T) {
 					userID:         1,
 					sku:            1076963,
 					count:          2,
+					name:           "Теория нравственных чувств | Смит Адам",
+					wantSku:        1076963,
 					wantName:       "Теория нравственных чувств | Смит Адам",
 					wantTotalPrice: 10137,
 					wantCount:      3,
@@ -111,12 +120,14 @@ func TestGetItemSuccess(t *testing.T) {
 			},
 		},
 		{
-			name: "successSameUserAnotherSku",
+			name: "successSameUserAnotherSkuTotalPrice",
 			steps: []getStep{
 				{
 					userID:         1,
 					sku:            1076963,
 					count:          1,
+					name:           "Теория нравственных чувств | Смит Адам",
+					wantSku:        1076963,
 					wantName:       "Теория нравственных чувств | Смит Адам",
 					wantTotalPrice: 3379,
 					wantCount:      1,
@@ -125,6 +136,8 @@ func TestGetItemSuccess(t *testing.T) {
 					userID:         1,
 					sku:            1148162,
 					count:          1,
+					name:           "Кулинар Гуров",
+					wantSku:        1148162,
 					wantName:       "Кулинар Гуров",
 					wantTotalPrice: 6310,
 					wantCount:      1,
@@ -138,6 +151,8 @@ func TestGetItemSuccess(t *testing.T) {
 					userID:         1,
 					sku:            1076963,
 					count:          1,
+					name:           "Теория нравственных чувств | Смит Адам",
+					wantSku:        1076963,
 					wantName:       "Теория нравственных чувств | Смит Адам",
 					wantTotalPrice: 3379,
 					wantCount:      1,
@@ -146,6 +161,8 @@ func TestGetItemSuccess(t *testing.T) {
 					userID:         2,
 					sku:            1148162,
 					count:          1,
+					name:           "Кулинар Гуров",
+					wantSku:        1148162,
 					wantName:       "Кулинар Гуров",
 					wantTotalPrice: 2931,
 					wantCount:      1,
@@ -162,8 +179,7 @@ func TestGetItemSuccess(t *testing.T) {
 			svc := cart.NewCartService(stCart, client)
 
 			for _, step := range tt.steps {
-				err := svc.AddItem(context.Background(), domain.UserID(step.userID), step.sku, uint32(step.count))
-				require.NoError(t, err)
+				stCart.AddItemDirectly(domain.UserID(step.userID), step.sku, uint32(step.count), step.price, step.name)
 
 				gotItems, gotTotalPrice, err := svc.GetCart(context.Background(), domain.UserID(step.userID))
 				require.NoError(t, err)
@@ -172,7 +188,7 @@ func TestGetItemSuccess(t *testing.T) {
 
 				haveItem := false
 				for _, item := range gotItems {
-					if item.Sku == step.sku {
+					if item.Sku == step.wantSku {
 						haveItem = true
 						require.Equal(t, step.wantCount, item.Count)
 						require.Equal(t, step.wantName, item.Name)
@@ -183,6 +199,77 @@ func TestGetItemSuccess(t *testing.T) {
 					require.Fail(t, "Item not added")
 				}
 			}
+		})
+	}
+}
+
+func TestGetItemOrder(t *testing.T) {
+	t.Parallel()
+	stProduct := fake.NewProductStorage()
+
+	tests := []struct {
+		name         string
+		wantSkuOrder []uint32
+		steps        []getStep
+	}{
+		{
+			name:         "successSameUserSkuOrder",
+			wantSkuOrder: []uint32{1076963, 1148162, 135147479},
+			steps: []getStep{
+				{
+					userID:         1,
+					sku:            1076963,
+					count:          1,
+					name:           "Теория нравственных чувств | Смит Адам",
+					wantSku:        1076963,
+					wantName:       "Теория нравственных чувств | Смит Адам",
+					wantTotalPrice: 3379,
+					wantCount:      1,
+				},
+				{
+					userID:         1,
+					sku:            1148162,
+					count:          1,
+					name:           "Кулинар Гуров",
+					wantSku:        1148162,
+					wantName:       "Кулинар Гуров",
+					wantTotalPrice: 6310,
+					wantCount:      1,
+				},
+				{
+					userID:         1,
+					sku:            135147479,
+					count:          1,
+					name:           "Онлайн.ru. Сидишь в Интернете? Прочти! Тут о тебе! | Игошев Андрей",
+					wantSku:        135147479,
+					wantName:       "Онлайн.ru. Сидишь в Интернете? Прочти! Тут о тебе! | Игошев Андрей",
+					wantTotalPrice: 9291,
+					wantCount:      1,
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			stCart := fake.NewCartStorage()
+			client := fake.NewProductServiceClient(*stProduct)
+			svc := cart.NewCartService(stCart, client)
+
+			for _, step := range tt.steps {
+				stCart.AddItemDirectly(domain.UserID(step.userID), step.sku, uint32(step.count), step.price, step.name)
+			}
+
+			gotItems, _, err := svc.GetCart(context.Background(), domain.UserID(tt.steps[0].userID))
+			require.NoError(t, err)
+
+			gotItemOrder := []uint32{}
+			for _, item := range gotItems {
+				gotItemOrder = append(gotItemOrder, uint32(item.Sku))
+			}
+
+			require.Equal(t, tt.wantSkuOrder, gotItemOrder)
 		})
 	}
 }

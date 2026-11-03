@@ -22,14 +22,14 @@ func (cs *CartStorage) SaveCart(userID domain.UserID, updatedCart domain.Cart) e
 
 func (cs *CartStorage) LoadCart(userID domain.UserID) (domain.Cart, error) {
 	userCart, ok := cs.carts[userID]
-	if !ok  {
+	if !ok {
 		return domain.Cart{}, cart.ErrCartNotFound
 	}
 
 	return userCart, nil
 }
 
-func (cs *CartStorage) AddItemDirectly(userID domain.UserID, updatedCart domain.Cart, sku int64, count uint32, price uint32, name string) error {
+func (cs *CartStorage) AddItemDirectly(userID domain.UserID, sku int64, count uint32, price uint32, name string) error {
 	userCart, err := cs.LoadCart(userID)
 	if err != nil {
 		if errors.Is(err, cart.ErrCartNotFound) {
@@ -45,7 +45,7 @@ func (cs *CartStorage) AddItemDirectly(userID domain.UserID, updatedCart domain.
 		userCart.Items[sku] = item
 	} else {
 		userCart.Items[sku] = domain.CartItem{
-			Sku: sku,
+			Sku:   sku,
 			Count: count,
 			Price: uint32(price),
 			Name:  name,
