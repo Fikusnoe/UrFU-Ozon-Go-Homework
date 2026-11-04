@@ -9,8 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
-
-	//"google.golang.org/grpc/status"
+	"google.golang.org/grpc/status"
 
 	pb "hw2/pkg/api/product"
 )
@@ -35,13 +34,13 @@ func TestProductGet(t *testing.T) {
 		},
 	}
 
-	client := newProductServiceClient(t)
-	reqCtx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
-
 	for _, tt := range tests {
+		client := newProductServiceClient(t)
+		reqCtx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancel()
+
 		_, err := client.GetProduct(reqCtx, &pb.GetProductRequest{Sku: tt.sku})
-		require.Error(t, err, tt.err)
+		require.Equal(t, tt.err, status.Code(err))
 	}
 }
 
