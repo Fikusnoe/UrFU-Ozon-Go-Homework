@@ -1,10 +1,11 @@
-////  //go:build api
+//  //go:build api
 
 package test
 
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
@@ -13,20 +14,44 @@ import (
 	pb "hw2/pkg/api/product"
 )
 
-func TestProductServiceOverNetwork(t *testing.T) {
+func TestProductGetSuccess(t *testing.T) {
 	t.Parallel()
 
+	tests := []struct {
+		name   string
+		sku int64
+		err    int
+	}{
+		{
+			name:   "get item",
+			sku: 1076963,
+			err:    http.StatusNotFound,
+		},
+		{
+			name:   "get another item",
+			sku: 135147479,
+			err:    http.StatusBadRequest,
+		},
+	}
+
 	client := newProductServiceClient(t)
-	ctx := context.Background()
+	reqCtx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
 
-	post, err := client.PostItem(ctx, &pb.PostItemRequest{Title: "Book", Description: "Very Great Book"})
-	require.NoError(t, err)
-	require.NotZero(t, post.Id)
+	for _, tt := range tests {
+		got, err := client.GetItem(ctx, &pb.GetProductRequest{tt.})
+		require.NoError(t, err)
 
-	got, err := client.GetItem(ctx, &pb.GetItemRequest{Id: post.Id})
-	require.NoError(t, err)
-	require.Equal(t, "Book", got.Title)
-	require.Equal(t, "Very Great Book", got.Description)
+
+		require.Equal(t, "Book", got.Title)
+		require.Equal(t, "Very Great Book", got.Description)
+	}
+
+
+	
+	
+	
+
 
 	_, err = client.GetItem(ctx, &pb.GetItemRequest{Id: 0})
 	require.Equal(t, codes.InvalidArgument, status.Code(err))

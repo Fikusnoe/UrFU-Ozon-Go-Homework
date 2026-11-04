@@ -1,4 +1,4 @@
-//go:build api
+// //go:build api
 
 package test
 
@@ -58,7 +58,7 @@ type step struct {
 	wantCount uint32
 }
 
-func TestGet(t *testing.T) {
+func TestCartGet(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -91,7 +91,7 @@ func TestGet(t *testing.T) {
 	}
 }
 
-func TestGetSuccess(t *testing.T) {
+func TestGetCartSuccess(t *testing.T) {
 	t.Parallel()
 
 	userID1 := GenerateUserID()
@@ -101,7 +101,7 @@ func TestGetSuccess(t *testing.T) {
 		steps []step
 	}{
 		{
-			name: "successOneUserOneItem",
+			name: "success One User One Item",
 			steps: []step{
 				step{
 					userID:    userID1,
@@ -112,7 +112,7 @@ func TestGetSuccess(t *testing.T) {
 			},
 		},
 		{
-			name: "successOneUserSameItem",
+			name: "success One User Same Item",
 			steps: []step{
 				step{
 					userID:    userID1,
@@ -123,7 +123,7 @@ func TestGetSuccess(t *testing.T) {
 			},
 		},
 		{
-			name: "successSameUserAnotherSku",
+			name: "success Same User Another Sku",
 			steps: []step{
 				step{
 					userID:    userID1,
@@ -134,7 +134,7 @@ func TestGetSuccess(t *testing.T) {
 			},
 		},
 		{
-			name: "successDiffUser",
+			name: "success Diff User",
 			steps: []step{
 				step{
 					userID:    GenerateUserID(),
@@ -195,7 +195,7 @@ func TestGetSuccess(t *testing.T) {
 	}
 }
 
-func TestAdd(t *testing.T) {
+func TestCartAdd(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -206,28 +206,28 @@ func TestAdd(t *testing.T) {
 		err    int
 	}{
 		{
-			name:   "invalidSku",
+			name:   "invalid Sku",
 			userID: GenerateUserID(),
 			sku:    -1,
 			count:  1,
 			err:    http.StatusBadRequest,
 		},
 		{
-			name:   "wrongSku",
+			name:   "wrong Sku",
 			userID: GenerateUserID(),
 			sku:    1452541123,
 			count:  1,
 			err:    http.StatusPreconditionFailed,
 		},
 		{
-			name:   "invalidCount",
+			name:   "invalid Count",
 			userID: GenerateUserID(),
 			sku:    1076963,
 			count:  -1,
 			err:    http.StatusBadRequest,
 		},
 		{
-			name:   "invalidUserID",
+			name:   "invalid User ID",
 			userID: -1,
 			sku:    1076963,
 			count:  1,
