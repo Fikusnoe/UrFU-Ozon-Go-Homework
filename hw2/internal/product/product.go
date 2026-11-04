@@ -3,21 +3,17 @@ package product
 import (
 	"context"
 	"fmt"
-
+	"hw2/internal/domain"
+	
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	pb "hw2/pkg/api/product"
 )
 
-type Product struct {
-	Name  string `json:"name"`
-	Price uint32 `json:"price"`
-}
-
 type ProductService struct {
 	Storage  Storage
-	Products map[int64]Product
+	Products map[int64]domain.Product
 
 	pb.UnimplementedProductServiceServer
 }

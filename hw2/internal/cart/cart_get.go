@@ -4,18 +4,19 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"hw2/internal/domain"
 	"slices"
 	"sync"
 	"time"
 )
 
-func (cs *CartService) GetCart(ctx context.Context, userID UserID) ([]CartItem, uint32, error) {
+func (cs *CartService) GetCart(ctx context.Context, userID domain.UserID) ([]domain.CartItem, uint32, error) {
 	err := ValidateUserId(userID)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	cartSnapshot := []CartItem{}
+	cartSnapshot := []domain.CartItem{}
 	cs.mu.RLock()
 
 	cart, err := cs.CartStorage.LoadCart(userID)
@@ -29,7 +30,7 @@ func (cs *CartService) GetCart(ctx context.Context, userID UserID) ([]CartItem, 
 	}
 
 	for sku, item := range cart.Items {
-		cartSnapshot = append(cartSnapshot, CartItem{Sku: sku, Count: item.Count})
+		cartSnapshot = append(cartSnapshot, domain.CartItem{Sku: sku, Count: item.Count})
 	}
 
 	cs.mu.RUnlock()
@@ -48,7 +49,7 @@ func (cs *CartService) GetCart(ctx context.Context, userID UserID) ([]CartItem, 
 	for i, item := range cartSnapshot {
 		wg.Add(1)
 
-		go func(index int, checkItem CartItem) {
+		go func(index int, checkItem domain.CartItem) {
 			defer wg.Done()
 			response, err := cs.MakeProductRPCRequest(requestCtx, checkItem.Sku)
 			rpcResults[index] = rpcResult{data: response, err: err}
@@ -76,8 +77,8 @@ func (cs *CartService) GetCart(ctx context.Context, userID UserID) ([]CartItem, 
 	return sortedItems, totalPrice, nil
 }
 
-func SortItems(items []CartItem) []CartItem {
-	slices.SortFunc(items, func(a, b CartItem) int {
+func SortItems(items []domain.CartItem) []domain.CartItem {
+	slices.SortFunc(items, func(a, b domain.CartItem) int {
 		if a.Sku > b.Sku {
 			return 1
 		} else if a.Sku < b.Sku {

@@ -30,6 +30,7 @@ func run() error {
 	defer conn.Close()
 
 	productClient := pb.NewProductServiceClient(conn)
+	
 	cartStorage := storage.NewCartStorage()
 	cartService := cart.NewCartService(cartStorage, productClient)
 

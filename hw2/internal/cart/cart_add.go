@@ -4,9 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"hw2/internal/domain"
 )
 
-func (cs *CartService) AddItem(ctx context.Context, userID UserID, sku int64, count uint32) error {
+func (cs *CartService) AddItem(ctx context.Context, userID domain.UserID, sku int64, count uint32) error {
 	err := ValidateInput(userID, sku, count)
 	if err != nil {
 		return err
@@ -23,7 +24,7 @@ func (cs *CartService) AddItem(ctx context.Context, userID UserID, sku int64, co
 	userCart, err := cs.CartStorage.LoadCart(userID)
 	if err != nil {
 		if errors.Is(err, ErrCartNotFound) {
-			userCart = Cart{Items: map[int64]CartItem{}}
+			userCart = domain.Cart{Items: map[int64]domain.CartItem{}}
 		} else {
 			return err
 		}
@@ -34,7 +35,7 @@ func (cs *CartService) AddItem(ctx context.Context, userID UserID, sku int64, co
 		item.Count += count
 		userCart.Items[sku] = item
 	} else {
-		userCart.Items[sku] = CartItem{Sku: response.Sku,
+		userCart.Items[sku] = domain.CartItem{Sku: response.Sku,
 			Count: count,
 			Price: uint32(response.Price),
 			Name:  response.Name,
