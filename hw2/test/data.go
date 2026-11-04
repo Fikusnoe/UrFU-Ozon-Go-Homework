@@ -6,6 +6,13 @@ type testCartItem struct {
 	Name  string `json:"name"`
 }
 
+type cartItem struct {
+	Sku   int64  `json:"sku"`
+	Count uint32 `json:"count"`
+	Price uint32 `json:"price"`
+	Name  string `json:"name"`
+}
+
 var testItems = map[int64]testCartItem{
 	1076963: testCartItem{
 		Sku:   1076963,

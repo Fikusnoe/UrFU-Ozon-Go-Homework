@@ -6,7 +6,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"hw2/internal/domain"
 	"net/http"
 	"testing"
 	"time"
@@ -19,16 +18,16 @@ type addRequestBody struct {
 }
 
 type cartResponse struct {
-	Items      []domain.CartItem `json:"items"`
-	TotalPrice uint32            `json:"total_price"`
+	Items      []cartItem `json:"items"`
+	TotalPrice uint32     `json:"total_price"`
 }
 
-func GenerateUserID() domain.UserID {
-	return domain.UserID(time.Now().UnixNano())
+func GenerateUserID() int64 {
+	return int64(time.Now().UnixNano())
 }
 
 type step struct {
-	userID    domain.UserID
+	userID    int64
 	sku       int64
 	count     uint32
 	wantCount uint32
@@ -39,7 +38,7 @@ func TestCartGet(t *testing.T) {
 
 	tests := []struct {
 		name   string
-		userID domain.UserID
+		userID int64
 		err    int
 	}{
 		{
@@ -176,7 +175,7 @@ func TestCartAdd(t *testing.T) {
 
 	tests := []struct {
 		name   string
-		userID domain.UserID
+		userID int64
 		sku    int64
 		count  int64
 		err    int
