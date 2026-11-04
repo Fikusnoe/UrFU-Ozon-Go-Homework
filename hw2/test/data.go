@@ -1,3 +1,5 @@
+//go:build api
+
 package test
 
 type testCartItem struct {
