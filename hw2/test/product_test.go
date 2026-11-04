@@ -35,13 +35,15 @@ func TestProductGet(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		client := newProductServiceClient(t)
-		reqCtx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-		defer cancel()
+		t.Run(tt.name, func(t *testing.T) {
+			client := newProductServiceClient(t)
+			reqCtx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+			defer cancel()
 
-		_, err := client.GetProduct(reqCtx, &pb.GetProductRequest{Sku: tt.sku})
-		require.Error(t, err)
-		require.Equal(t, tt.err, status.Code(err))
+			_, err := client.GetProduct(reqCtx, &pb.GetProductRequest{Sku: tt.sku})
+			require.Error(t, err)
+			require.Equal(t, tt.err, status.Code(err))
+		})
 	}
 }
 
@@ -84,11 +86,13 @@ func TestProductGetSuccess(t *testing.T) {
 	defer cancel()
 
 	for _, tt := range tests {
-		got, err := client.GetProduct(reqCtx, &pb.GetProductRequest{Sku: tt.sku})
-		require.NoError(t, err)
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := client.GetProduct(reqCtx, &pb.GetProductRequest{Sku: tt.sku})
+			require.NoError(t, err)
 
-		require.Equal(t, testItems[tt.sku].Sku, got.Sku)
-		require.Equal(t, testItems[tt.sku].Name, got.Name)
-		require.Equal(t, testItems[tt.sku].Price, uint32(got.Price))
+			require.Equal(t, testItems[tt.sku].Sku, got.Sku)
+			require.Equal(t, testItems[tt.sku].Name, got.Name)
+			require.Equal(t, testItems[tt.sku].Price, uint32(got.Price))
+		})
 	}
 }
