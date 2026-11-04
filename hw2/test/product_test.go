@@ -40,6 +40,7 @@ func TestProductGet(t *testing.T) {
 		defer cancel()
 
 		_, err := client.GetProduct(reqCtx, &pb.GetProductRequest{Sku: tt.sku})
+		require.Error(t, err)
 		require.Equal(t, tt.err, status.Code(err))
 	}
 }
@@ -52,7 +53,8 @@ func TestProductGetNil(t *testing.T) {
 	defer cancel()
 
 	_, err := client.GetProduct(reqCtx, nil)
-	require.Error(t, err, codes.InvalidArgument)
+	require.Error(t, err)
+	require.Equal(t, codes.InvalidArgument, status.Code(err))
 }
 
 func TestProductGetSuccess(t *testing.T) {
