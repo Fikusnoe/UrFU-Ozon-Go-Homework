@@ -1,75 +1,255 @@
+//go:build api
+
 package test
 
 import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"hw2/internal/cart"
 	"hw2/internal/domain"
 	"net/http"
-	"sync"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 )
 
-type UserIDGenerator struct {
-	mu      *sync.RWMutex
-	counter domain.UserID
+type testCartItem struct {
+	Sku   int64  `json:"sku"`
+	Price uint32 `json:"price"`
+	Name  string `json:"name"`
 }
 
-func (g *UserIDGenerator) Next() domain.UserID {
-	g.mu.Lock()
-	defer g.mu.Unlock()
-	g.counter++
-
-	return g.counter
+type addRequestBody struct {
+	Count int32 `json:"count"`
 }
 
-func TestCartService(t *testing.T) {
+type cartResponse struct {
+	Items      []domain.CartItem `json:"items"`
+	TotalPrice uint32            `json:"total_price"`
+}
+
+func GenerateUserID() domain.UserID {
+	return domain.UserID(time.Now().UnixNano())
+}
+
+var testItems = map[int64]testCartItem{
+	1076963: testCartItem{
+		Sku:   1076963,
+		Name:  "Теория нравственных чувств | Смит Адам",
+		Price: 3379,
+	},
+	1148162: testCartItem{
+		Sku:   1148162,
+		Name:  "Кулинар Гуров",
+		Price: 2931,
+	},
+	135147479: testCartItem{
+		Sku:   135147479,
+		Name:  "Онлайн.ru. Сидишь в Интернете? Прочти! Тут о тебе! | Игошев Андрей",
+		Price: 2981,
+	},
+}
+
+type step struct {
+	userID    domain.UserID
+	sku       int64
+	count     uint32
+	wantCount uint32
+}
+
+func TestGet(t *testing.T) {
 	t.Parallel()
 
-	userID := UserIDGenerator{
-		mu:      &sync.RWMutex{},
-		counter: 1,
+	tests := []struct {
+		name   string
+		userID domain.UserID
+		err    int
+	}{
+		{
+			name:   "cartDoesntExist",
+			userID: GenerateUserID(),
+			err:    http.StatusNotFound,
+		},
+		{
+			name:   "invalidUserID",
+			userID: -1,
+			err:    http.StatusBadRequest,
+		},
 	}
 
-	t.Run("fail - get empty cart via HTTP", func(t *testing.T) {
-		t.Parallel()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 
-		resp, err := http.Get(cartServicePort + fmt.Sprintf("/user/%v/cart", userID.Next()))
-		defer resp.Body.Close()
-		require.Error(t, err)
-	})
+			resp, err := http.Get(cartServicePort + fmt.Sprintf("/user/%v/cart", tt.userID))
+			require.NoError(t, err)
+			defer resp.Body.Close()
 
-	t.Run("success - get cart via HTTP", func(t *testing.T) {
-		t.Parallel()
+			require.Equal(t, tt.err, resp.StatusCode)
+		})
+	}
+}
 
-		userID := userID.Next()
+func TestGetSuccess(t *testing.T) {
+	t.Parallel()
 
-		wantCount := 1
-		bodyData := cart.AddRequestBody{Count: int32(wantCount)}
+	userID1 := GenerateUserID()
 
-		jsonData, err := json.Marshal(bodyData)
-		require.NoError(t, err)
+	tests := []struct {
+		name  string
+		steps []step
+	}{
+		{
+			name: "successOneUserOneItem",
+			steps: []step{
+				step{
+					userID:    userID1,
+					sku:       1076963,
+					count:     1,
+					wantCount: 1,
+				},
+			},
+		},
+		{
+			name: "successOneUserSameItem",
+			steps: []step{
+				step{
+					userID:    userID1,
+					sku:       1076963,
+					count:     1,
+					wantCount: 2,
+				},
+			},
+		},
+		{
+			name: "successSameUserAnotherSku",
+			steps: []step{
+				step{
+					userID:    userID1,
+					sku:       1148162,
+					count:     1,
+					wantCount: 1,
+				},
+			},
+		},
+		{
+			name: "successDiffUser",
+			steps: []step{
+				step{
+					userID:    GenerateUserID(),
+					sku:       1148162,
+					count:     1,
+					wantCount: 1,
+				},
+			},
+		},
+	}
 
-		body := bytes.NewReader(jsonData)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 
-		http.Post(fmt.Sprintf("/user/%v/cart/%v", userID, 1076963), "application/json", body)
+			for _, step := range tt.steps {
+				wantTotalPrice := uint32(0)
+				bodyData := addRequestBody{Count: int32(step.count)}
 
-		gotResp, err := http.Get(cartServicePort + fmt.Sprintf("/user/%v/cart", userID))
-		require.NoError(t, err)
-		defer gotResp.Body.Close()
+				jsonData, err := json.Marshal(bodyData)
+				require.NoError(t, err)
 
-		require.Equal(t, http.StatusOK, gotResp.StatusCode)
+				body := bytes.NewReader(jsonData)
 
-		items := []domain.CartItem{}
-		err = json.NewDecoder(gotResp.Body).Decode(&items)
-		require.NoError(t, err)
+				postResp, err := http.Post(cartServicePort+fmt.Sprintf("/user/%v/cart/%v", step.userID, step.sku), "application/json", body)
+				require.NoError(t, err)
+				defer postResp.Body.Close()
+				require.Equal(t, http.StatusOK, postResp.StatusCode)
 
-		require.Equal(t, items[0].Sku, 1076963)
-		require.Equal(t, items[0].Count, wantCount)
-		require.Equal(t, items[0].Name, "Теория нравственных чувств | Смит Адам")
-		require.Equal(t, items[0].Price, 3379)
-	})
+				gotResp, err := http.Get(cartServicePort + fmt.Sprintf("/user/%v/cart", step.userID))
+				require.NoError(t, err)
+				defer gotResp.Body.Close()
+
+				require.Equal(t, http.StatusOK, gotResp.StatusCode)
+
+				resp := cartResponse{}
+				err = json.NewDecoder(gotResp.Body).Decode(&resp)
+				require.NoError(t, err)
+
+				items := resp.Items
+
+				haveItem := false
+				for _, item := range items {
+					wantTotalPrice += item.Price * item.Count
+					if item.Sku == step.sku {
+						require.Equal(t, step.wantCount, item.Count)
+						require.Equal(t, testItems[step.sku].Name, item.Name)
+						require.Equal(t, testItems[step.sku].Price, item.Price)
+						haveItem = true
+					}
+				}
+
+				require.Equal(t, wantTotalPrice, resp.TotalPrice)
+				if !haveItem {
+					require.Fail(t, "Item not added")
+				}
+			}
+		})
+	}
+}
+
+func TestAdd(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name   string
+		userID domain.UserID
+		sku    int64
+		count  int64
+		err    int
+	}{
+		{
+			name:   "invalidSku",
+			userID: GenerateUserID(),
+			sku:    -1,
+			count:  1,
+			err:    http.StatusBadRequest,
+		},
+		{
+			name:   "wrongSku",
+			userID: GenerateUserID(),
+			sku:    1452541123,
+			count:  1,
+			err:    http.StatusPreconditionFailed,
+		},
+		{
+			name:   "invalidCount",
+			userID: GenerateUserID(),
+			sku:    1076963,
+			count:  -1,
+			err:    http.StatusBadRequest,
+		},
+		{
+			name:   "invalidUserID",
+			userID: -1,
+			sku:    1076963,
+			count:  1,
+			err:    http.StatusBadRequest,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			bodyData := addRequestBody{Count: int32(tt.count)}
+
+			jsonData, err := json.Marshal(bodyData)
+			require.NoError(t, err)
+
+			body := bytes.NewReader(jsonData)
+
+			postResp, err := http.Post(cartServicePort+fmt.Sprintf("/user/%v/cart/%v", tt.userID, tt.sku), "application/json", body)
+			require.NoError(t, err)
+			require.Equal(t, tt.err, postResp.StatusCode)
+			defer postResp.Body.Close()
+		})
+	}
 }
